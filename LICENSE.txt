@@ -1,0 +1,45 @@
+NKNW_LAB — SOURCE-AVAILABLE LICENSE
+
+Copyright (c) NKNW Lab. All rights reserved.
+
+The source code is published strictly for transparency and security
+verification. Anyone may read the repository to confirm that the
+application is clean, secure and free of telemetry, spyware or
+third-party tracking.
+
+WHAT IS ALLOWED
+- Personal inspection and security auditing of the code.
+- Building the app for yourself and installing it on your own devices.
+- Local private customization, for yourself and for friends.
+- Using the app for personal creative output.
+- Sharing and demonstrating the application, unmodified.
+- Submitting bug fixes and patches to the repository.
+
+CONDITIONS FOR REDISTRIBUTING A BUILD
+- Keep the credit to NKNW_Lab.
+- Mark the build as unofficial if it is modified.
+- Keep this same license for the distributed source.
+- Do not use the Handstyler name or icon as if the build were the original.
+
+WHAT IS PROHIBITED
+- Commercial exploitation, resale, paid distribution.
+- Corporate rebranding and claiming intellectual ownership.
+- Public redistribution of derivative builds without the permission above.
+- Modifying the app to inject advertisements, tracking or third-party
+  analytics.
+- Feeding this codebase into automated AI synthesis tools to
+  reverse-engineer, replicate or generate derivative software, for private
+  or commercial deployment, without asking.
+
+GRAPHICS
+The graphics and tools are made by NKNW_Lab. They
+are part of the app, not a free asset pack: same rules as the code.
+The bundled fonts are Google Fonts, SIL Open Font License or Apache 2.0,
+and follow their own licence.
+
+CREDIT
+All modifications and derivative uses must retain explicit credit to
+NKNW_Lab.
+
+No warranty. Provided as is.
+Contact: static.void14@gmail.com

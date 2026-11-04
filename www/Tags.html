@@ -1,0 +1,3052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="screen-orientation" content="landscape">
+    <meta name="x5-orientation" content="landscape">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="x5-fullscreen" content="true">
+    <meta name="theme-color" content="#0a0a00">
+    <title>HANDSTYLER</title>
+    <script src="cordova.js"></script>
+
+<style>
+    /* Self-hosted pixel font: no Google, no CDN. File must sit next to this page. */
+    @font-face {
+        font-family: 'Press Start 2P';
+        src: url('fonts/PressStart2P.woff2') format('woff2');
+        font-weight: normal;
+        font-style: normal;
+        font-display: block;
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+        touch-action: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #0a0a00;
+        overscroll-behavior: none;
+        touch-action: none;
+        -webkit-overflow-scrolling: none;
+    }
+
+    body {
+        background: #0a0a00;
+        font-family: 'Courier New', monospace;
+        color: #ffaa00;
+        width: 100vw;
+        height: 100vh;
+        display: block;
+        overflow: hidden;
+        touch-action: none;
+        top: 0;
+        left: 0;
+    }
+
+    .app-container {
+        width: 100vw;
+        height: 100vh;
+        background: #0a0a00;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        position: relative;
+        box-shadow: 0 0 25px rgba(0, 0, 0, 0.9);
+    }
+
+    .industrial-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #14130c;
+        border-bottom: 1px solid #221f14;
+        padding: 6px 10px;
+        z-index: 3;
+        flex-shrink: 0;
+        position: relative;
+        width: 100%;
+    }
+
+    .terminal-large-box {
+        flex: 0 0 100px;
+        width: 100px;
+        height: 45px;
+        border: 1px solid #2ecc71;
+        background: rgba(4, 22, 12, 0.75);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+        cursor: crosshair;
+        box-shadow: inset 0 0 20px rgba(46, 204, 113, 0.25), 0 0 25px rgba(46, 204, 113, 0.6);
+        touch-action: pan-y;
+        z-index: 5;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    #vramCanvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 2;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+    }
+
+    .floating-ghost-text {
+        position: absolute;
+        font-family: 'Press Start 2P', monospace;
+        font-size: 0.4em;
+        line-height: 1.3;
+        color: #000;
+        text-shadow: 0 0 2px rgba(0, 0, 0, 0.95);
+        white-space: pre-line;
+        pointer-events: none;
+        z-index: 3;
+        will-change: transform;
+        animation: fast-wide-movement var(--anim-dur) ease-in-out infinite alternate;
+    }
+
+    @keyframes fast-wide-movement {
+        0% { transform: translate(var(--start-x), var(--start-y)) scale(0.9); }
+        33% { transform: translate(calc(var(--start-x) + 40px), calc(var(--start-y) - 30px)) skewX(-12deg); }
+        66% { transform: translate(calc(var(--start-x) - 35px), calc(var(--start-y) + 35px)) skewX(12deg); }
+        100% { transform: translate(calc(var(--start-x) + 25px), calc(var(--start-y) - 20px)) scale(1.1); }
+    }
+
+    /* Icon row */
+    .center-section-top {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 0;
+        gap: 6px;
+        min-width: 0;
+        flex: 0 0 auto;
+    }
+
+    .sliders-vertical-stack {
+        display: none;
+    }
+
+    .tool-group {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.8em;
+        color: #c5bda8;
+        text-transform: uppercase;
+        font-weight: bold;
+        width: 100%;
+    }
+
+    .industrial-slider {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 88%;
+        height: 8px;
+        padding: 2px;
+        background: #0a0a09;
+        border: 1px solid #554a3b;
+        outline: none;
+    }
+
+    .industrial-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 9px;
+        height: 7px;
+        background: #ffaa00;
+        cursor: pointer;
+        border: 1px solid #000;
+    }
+
+    .industrial-slider.size-slider {
+        height: 112px;
+        border-color: #554a3b;
+        background: #0a0a09;
+        width: 100%;
+    }
+
+    .industrial-slider.size-slider::-webkit-slider-thumb {
+        width: 4px;
+        height: 6px;
+        background: #ffaa00;
+        border: 1px solid #000;
+        box-shadow: none;
+    }
+
+    /* size slider living in the toolbar */
+    .toolbar-size {
+        display: flex;
+        align-items: center;
+        flex: 1 1 auto;
+        min-width: 50px;
+        margin: 0 8px;
+    }
+
+    .toolbar-size .industrial-slider.size-slider {
+        width: 100%;
+        height: 10px;
+        padding: 0;
+        border-color: #554a3b;
+    }
+
+    .toolbar-size .industrial-slider.size-slider::-webkit-slider-thumb {
+        width: 14px;
+        height: 14px;
+        background: #ffaa00;
+        border: 1px solid #000;
+    }
+
+    .png-icons-slot {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex: 0 0 auto;
+        margin-left: 2px;
+    }
+
+    /* Tool buttons: real <button>, UA styling fully reset */
+    .icon-box {
+        width: 45px;
+        height: 45px;
+        padding: 0;
+        appearance: none;
+        -webkit-appearance: none;
+        font: inherit;
+        color: inherit;
+        background: #0a0a09;
+        border: 1px solid #554a3b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        overflow: hidden;
+        transition: border-color 0.1s;
+        touch-action: manipulation;
+        flex: 0 0 auto;
+    }
+
+    .icon-box:hover, .icon-box.active {
+        border-color: #ffaa00;
+        background: #1f1b12;
+    }
+
+    .icon-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        pointer-events: none;
+    }
+
+    /* colour button: same box as the tools, filled with the active colour */
+    .color-tool {
+        margin-left: 0;
+    }
+
+    .color-fill {
+        width: 100%;
+        height: 100%;
+        display: block;
+        pointer-events: none;
+        background: #2c8576;
+    }
+
+    .right-section-top {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 12px;
+        position: relative;
+        padding: 0;
+        flex: 0 0 auto;
+    }
+
+    /* SETUP as transparent PNG without border */
+    .setup-box-btn {
+        height: 45px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.1s;
+        touch-action: manipulation;
+    }
+
+    .setup-box-btn img {
+        height: 34px;
+        width: auto;
+        max-width: 110px;
+        object-fit: contain;
+        pointer-events: none;
+        transition: filter 0.1s;
+    }
+
+    .setup-box-btn:hover img,
+    .setup-box-btn:active img {
+        filter: drop-shadow(0 0 6px rgba(0, 180, 216, 0.9)) brightness(1.2);
+    }
+
+    /* CLEAR */
+    .clear-box-btn {
+        height: 45px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.1s;
+        touch-action: manipulation;
+    }
+
+    .clear-box-btn img {
+        height: 34px;
+        width: auto;
+        max-width: 110px;
+        object-fit: contain;
+        pointer-events: none;
+        transition: filter 0.1s;
+    }
+
+    .clear-box-btn:hover img,
+    .clear-box-btn:active img {
+        filter: drop-shadow(0 0 7px rgba(255, 107, 53, 0.95)) brightness(1.25);
+    }
+
+    /* Hamburger: borderless, drawn with bars so the height is real */
+    .menu-hamburger {
+        background: transparent;
+        border: none;
+        color: #ffaa00;
+        font-size: 0;
+        width: 45px;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-family: monospace;
+        padding: 0;
+        touch-action: manipulation;
+        transition: color 0.15s, filter 0.15s;
+    }
+
+    .menu-hamburger::before {
+        content: '';
+        width: 30px;
+        height: 28px;
+        background-image:
+            linear-gradient(currentColor, currentColor),
+            linear-gradient(currentColor, currentColor),
+            linear-gradient(currentColor, currentColor);
+        background-size: 100% 3px;
+        background-position: 0 0, 0 50%, 0 100%;
+        background-repeat: no-repeat;
+    }
+
+    .menu-hamburger:hover {
+        color: #fff;
+        filter: drop-shadow(0 0 8px rgba(255, 170, 0, 0.9));
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 5px);
+        right: 0;
+        background: #0c1812;
+        border: 1px solid #2a3a30;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+        display: none;
+        flex-direction: column;
+        z-index: 9999;
+        min-width: 170px;
+    }
+
+    .dropdown-menu.active {
+        display: flex;
+    }
+
+    /* Menu entries: real <button>, no anchor/UA leftovers */
+    .dropdown-item {
+        display: block;
+        padding: 9px 12px;
+        font-family: inherit;
+        font-size: 0.8em;
+        color: #88cc99;
+        text-align: center;
+        border: none;
+        border-bottom: 1px solid #16211a;
+        cursor: pointer;
+        text-transform: uppercase;
+        font-weight: bold;
+        background: #0c1812;
+        transition: all 0.15s ease;
+        touch-action: manipulation;
+    }
+
+    .dropdown-item:hover {
+        background: #559977;
+        color: #05100a;
+    }
+
+    .dropdown-item:last-child {
+        border-bottom: none;
+    }
+
+    .dropdown-item.info-special {
+        color: #ff6b35;
+        border-color: #401a0e;
+    }
+
+    .dropdown-item.info-special:hover {
+        background: #ff6b35;
+        color: #0c1812;
+    }
+
+    .dropdown-item.quit-special {
+        color: #ff6b35;
+        border: 1px solid #ff6b35;
+        margin: 4px;
+        padding: 8px;
+        border-radius: 2px;
+        background: rgba(255, 107, 53, 0.08);
+    }
+
+    .dropdown-item.quit-special:hover {
+        background: #ff6b35;
+        color: #0c1812;
+        box-shadow: 0 0 8px rgba(255, 107, 53, 0.8);
+    }
+
+    /* ===== MODALS / MENU ===== */
+    .terminal-fullscreen-modal {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        border: 1px solid #223128;
+        border-radius: 12px;
+        z-index: 99999;
+        display: none;
+        flex-direction: column;
+        padding: 24px;
+        font-family: 'Courier New', monospace;
+        color: #c5bda8;
+        overflow: hidden;                /* scroll is delegated to .terminal-modal-body */
+        overscroll-behavior: contain;
+        touch-action: pan-y;
+    }
+
+    .terminal-fullscreen-modal.active {
+        display: flex;
+    }
+
+    .terminal-upload-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 340px;
+        height: 140px;
+        border: 1px solid #223128;
+        border-radius: 12px;
+        z-index: 99999;
+        display: none;
+        flex-direction: column;
+        padding: 12px 16px;
+        font-family: 'Courier New', monospace;
+        color: #c5bda8;
+    }
+
+    .terminal-upload-modal.active {
+        display: flex;
+    }
+
+    .terminal-fullscreen-modal,
+    .terminal-upload-modal,
+    .controls-modal,
+    .color-modal {
+        background: rgba(7, 11, 9, 0.95);
+        -webkit-backdrop-filter: blur(6px);
+        backdrop-filter: blur(6px);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.75);
+    }
+
+    .terminal-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #1c2921;
+        padding-bottom: 10px;
+        margin-bottom: 14px;
+        font-size: 0.8em;
+        font-weight: bold;
+        letter-spacing: 2px;
+        color: #ff6b35;
+        flex-shrink: 0;
+    }
+
+    .terminal-modal-close {
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        color: #ff6b35;
+        padding: 3px 8px;
+        cursor: pointer;
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        font-size: 0.8em;
+        transition: all 0.15s;
+        touch-action: manipulation;
+    }
+
+    .terminal-modal-close:hover {
+        background: rgba(255, 107, 53, 0.15);
+        border-color: rgba(255, 107, 53, 0.4);
+        color: #fff;
+    }
+
+    .terminal-modal-body {
+        flex: 1 1 auto;
+        min-height: 0;                   /* lets the body actually become the scroll container */
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        touch-action: pan-y;             /* allow vertical swipe scrolling */
+        font-size: 1em;
+        line-height: 1.6;
+        color: #c5bda8;
+    }
+
+    /* The global "* { touch-action: none }" kills scrolling for any descendant,
+       so re-enable vertical panning on everything inside a scrollable modal body. */
+    .terminal-modal-body,
+    .terminal-modal-body * {
+        touch-action: pan-y;
+    }
+
+    .square-upload-btn {
+        width: 50px;
+        height: 50px;
+        background: #051923;
+        border: 1px solid #00b4d8;
+        border-radius: 8px;
+        color: #00f5ff;
+        font-family: 'Courier New', monospace;
+        font-size: 0.7em;
+        font-weight: bold;
+        cursor: pointer;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 5px rgba(0, 180, 216, 0.6);
+        transition: all 0.1s;
+        touch-action: manipulation;
+    }
+
+    .square-upload-btn:hover {
+        background: #00b4d8;
+        color: #000;
+    }
+
+    .quit-btn-container {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        margin-top: 5px;
+    }
+
+    /* red, borderless */
+    .quit-confirm-btn {
+        background: transparent;
+        border: none;
+        color: #ff2d2d;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85em;
+        font-weight: bold;
+        padding: 8px 18px;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: all 0.15s;
+        touch-action: manipulation;
+    }
+
+    .quit-confirm-btn:hover {
+        background: #ff2d2d;
+        color: #0a0a00;
+        box-shadow: 0 0 10px rgba(255, 45, 45, 0.8);
+    }
+
+    .quit-cancel-btn {
+        background: #051923;
+        border: 1px solid #00b4d8;
+        border-radius: 8px;
+        color: #00f5ff;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85em;
+        font-weight: bold;
+        padding: 8px 18px;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: all 0.15s;
+        touch-action: manipulation;
+    }
+
+    .quit-cancel-btn:hover {
+        background: #00b4d8;
+        color: #000;
+        box-shadow: 0 0 10px rgba(0, 180, 216, 0.8);
+    }
+
+    .toast-saved-alert {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-50px);
+        background: rgba(4, 22, 12, 0.95);
+        border: 1px solid #2ecc71;
+        color: #2ecc71;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+        font-weight: bold;
+        padding: 10px 20px;
+        box-shadow: 0 0 15px rgba(46, 204, 113, 0.5);
+        z-index: 999999;
+        opacity: 0;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+        pointer-events: none;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .toast-saved-alert.show {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+
+    /* ===== BACKGROUND CAROUSEL (one large preview at a time) ===== */
+    #backgroundModal {
+        padding: 10px 12px;
+        overflow: hidden;
+        touch-action: none;
+    }
+
+    #backgroundModal .terminal-modal-header {
+        padding-bottom: 8px;
+        margin-bottom: 8px;
+        gap: 10px;
+    }
+
+    .bg-modal-counter {
+        margin-left: auto;
+        margin-right: 10px;
+        font-size: 0.85em;
+        letter-spacing: 1px;
+        color: #9fb3ac;
+        font-weight: bold;
+        white-space: nowrap;
+    }
+
+    .bg-carousel-wrap {
+        position: relative;
+        flex: 1 1 auto;
+        min-height: 0;
+        width: 100%;
+        display: flex;
+        align-items: stretch;
+        justify-content: center;
+    }
+
+    .bg-carousel-viewport {
+        position: relative;
+        flex: 1 1 auto;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+        border-radius: 10px;
+        touch-action: none;
+        cursor: grab;
+    }
+
+    .bg-carousel-viewport.dragging {
+        cursor: grabbing;
+    }
+
+    .bg-carousel-track {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        will-change: transform;
+        backface-visibility: hidden;
+    }
+
+    .bg-slide {
+        position: relative;
+        flex: 0 0 100%;
+        width: 100%;
+        min-width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background: #0c1812;
+        border: 1px solid #2a3a30;
+        border-radius: 10px;
+        cursor: pointer;
+    }
+
+    .bg-slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        pointer-events: none;
+        -webkit-user-drag: none;
+        display: block;
+    }
+
+    .bg-slide-transparent {
+        width: 100%;
+        height: 100%;
+        background-color: #1a1a1a;
+        background-image:
+            linear-gradient(45deg, #2e2e2e 25%, transparent 25%, transparent 75%, #2e2e2e 75%),
+            linear-gradient(45deg, #2e2e2e 25%, transparent 25%, transparent 75%, #2e2e2e 75%);
+        background-size: 22px 22px;
+        background-position: 0 0, 11px 11px;
+    }
+
+    .bg-slide.active {
+        border-color: #ff6b35;
+        box-shadow: 0 0 0 1px #ff6b35, 0 0 22px rgba(255, 107, 53, 0.45);
+    }
+
+    .bg-slide-label {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 8px 10px 6px;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.88), rgba(0, 0, 0, 0));
+        color: #ff6b35;
+        font-size: 0.75em;
+        font-weight: bold;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        text-align: center;
+        pointer-events: none;
+    }
+
+    .bg-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 6;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border-radius: 50%;
+        background: rgba(7, 11, 9, 0.72);
+        border: 1px solid rgba(255, 107, 53, 0.6);
+        color: #ff6b35;
+        font-family: 'Courier New', monospace;
+        font-size: 18px;
+        font-weight: bold;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        touch-action: manipulation;
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+        transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    }
+
+    .bg-arrow:hover,
+    .bg-arrow:active {
+        background: #ff6b35;
+        color: #040806;
+        box-shadow: 0 0 14px rgba(255, 107, 53, 0.9);
+    }
+
+    .bg-arrow-left { left: 8px; }
+    .bg-arrow-right { right: 8px; }
+
+    .bg-carousel-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding-top: 8px;
+        flex-shrink: 0;
+    }
+
+    .bg-carousel-label {
+        font-size: 0.8em;
+        font-weight: bold;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #ff6b35;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .bg-carousel-hint {
+        font-size: 0.7em;
+        letter-spacing: 1px;
+        color: #6f8a80;
+        white-space: nowrap;
+        margin-left: auto;
+    }
+
+    .bg-carousel-use {
+        background: rgba(255, 107, 53, 0.12);
+        border: 1px solid #ff6b35;
+        color: #ff6b35;
+        font-family: 'Courier New', monospace;
+        font-size: 0.78em;
+        font-weight: bold;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 7px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        white-space: nowrap;
+        touch-action: manipulation;
+        transition: all 0.15s;
+    }
+
+    .bg-carousel-use:hover,
+    .bg-carousel-use:active {
+        background: #ff6b35;
+        color: #040806;
+        box-shadow: 0 0 10px rgba(255, 107, 53, 0.8);
+    }
+
+    .info-content-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .info-text-small {
+        font-size: 1.08em;
+        line-height: 1.65;
+        color: #c5bda8;
+    }
+
+    .info-icons-grid {
+        display: grid;
+        gap: clamp(8px, 2vh, 18px);
+        align-items: start;
+        justify-items: center;
+        margin-top: 6px;
+        width: 100%;
+    }
+
+    .info-icons-grid.cols-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .info-icons-grid.cols-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .info-icon-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .info-icon-square {
+        width: clamp(40px, 8vh, 75px);
+        height: clamp(40px, 8vh, 75px);
+        background: transparent;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: visible;
+        touch-action: manipulation;
+    }
+
+    .info-icon-square img {
+        width: 80%;
+        height: 80%;
+        object-fit: contain;
+        pointer-events: none;
+    }
+
+    .info-icon-label {
+        font-size: clamp(0.52em, 1.5vh, 0.75em);
+        color: #ff6b35;
+        text-transform: uppercase;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .info-icon-link {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        cursor: pointer;
+        transition: transform 0.15s ease;
+        touch-action: manipulation;
+    }
+
+    .info-icon-link:hover {
+        transform: scale(1.05);
+    }
+
+    .info-icon-link:hover .info-icon-square img {
+        filter: drop-shadow(0 0 10px rgba(255, 107, 53, 0.9)) brightness(1.2);
+    }
+
+    .info-icon-link:hover .info-icon-label {
+        color: #fff;
+        text-shadow: 0 0 8px rgba(255, 107, 53, 0.8);
+    }
+
+    .info-external-link {
+        display: inline-block;
+        margin-top: 6px;
+        color: #ff6b35;
+        font-size: 1.08em;
+        font-weight: bold;
+        text-decoration: underline;
+        transition: color 0.15s;
+    }
+
+    .info-links-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 4px;
+    }
+
+    .info-links-row .info-external-link {
+        margin-top: 0;
+    }
+
+    .info-external-link:hover {
+        color: #fff;
+    }
+
+    /* muted viridian site link, centered */
+    .info-site-link {
+        display: block;
+        text-align: center;
+        margin-top: 30px;
+        margin-bottom: 0px;
+        color: #3e7a67;
+        font-size: 2.4em;
+        font-weight: bold;
+        letter-spacing: 1px;
+        text-decoration: none;
+        transition: color 0.15s, text-shadow 0.15s;
+    }
+
+    .info-site-link:hover {
+        color: #58a189;
+        text-shadow: 0 0 8px rgba(62, 122, 103, 0.7);
+    }
+
+    .info-last-line {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 14px;
+    }
+
+    .info-last-line .info-external-link {
+        margin-top: 0;
+        white-space: nowrap;
+    }
+
+    .industrial-canvas-container {
+        position: relative;
+        flex: 1 1 auto;
+        min-width: 0;
+        min-height: 0;
+        background: #070706;
+        border: none;
+        cursor: crosshair;
+        overflow: hidden;
+        z-index: 1;
+        touch-action: none;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+    }
+
+    .industrial-canvas-container canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+    }
+
+    .watermark-logo {
+        position: absolute;
+        bottom: 8px;
+        right: 10px;
+        color: rgba(120, 120, 120, 0.4);
+        font-family: 'Press Start 2P', monospace;
+        font-size: 0.55em;
+        pointer-events: none;
+        z-index: 5;
+        letter-spacing: 1px;
+    }
+
+    .controls-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: min(380px, calc(100vw - 24px));
+        max-height: 92vh;
+        border: 1px solid #1f3a44;
+        border-radius: 12px;
+        z-index: 99999;
+        display: none;
+        flex-direction: column;
+        padding: 16px;
+        font-family: 'Courier New', monospace;
+        color: #00f5ff;
+    }
+
+    .controls-modal.active {
+        display: flex;
+    }
+
+    .controls-modal .terminal-modal-header {
+        border-bottom-color: #1f3a44;
+        color: #00c6e6;
+    }
+
+    .controls-modal .terminal-modal-close {
+        border-color: #00b4d8;
+        color: #00f5ff;
+    }
+
+    .controls-modal .terminal-modal-close:hover {
+        background: #00b4d8;
+        color: #000;
+    }
+
+    .control-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+
+    .control-row label {
+        font-size: 0.75em;
+        letter-spacing: 1px;
+        color: #9fb3ac;
+        text-transform: uppercase;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .control-row .industrial-slider {
+        width: 100%;
+    }
+
+    /* Slider inside the modal: normal horizontal, not the tall one */
+    .controls-modal .industrial-slider.size-slider {
+        height: 10px;
+        padding: 0;
+    }
+
+    .controls-modal .industrial-slider.size-slider::-webkit-slider-thumb {
+        width: 14px;
+        height: 14px;
+        background: #ffaa00;
+        border: 1px solid #000;
+    }
+
+    /* ===== COLOUR PICKER MODAL ===== */
+    .color-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: min(440px, calc(100vw - 24px));
+        max-height: 92vh;
+        border: 1px solid #4a3520;
+        border-radius: 12px;
+        z-index: 99999;
+        display: none;
+        flex-direction: column;
+        padding: 16px;
+        font-family: 'Courier New', monospace;
+        color: #ffaa00;
+    }
+
+    .color-modal.active {
+        display: flex;
+    }
+
+    .color-modal .terminal-modal-header {
+        border-bottom-color: #4a3520;
+        color: #ffaa00;
+    }
+
+    .color-modal .terminal-modal-close {
+        border-color: #ffaa00;
+        color: #ffaa00;
+    }
+
+    .color-modal .terminal-modal-close:hover {
+        background: #ffaa00;
+        color: #000;
+    }
+
+    /* saturation / value field */
+    .picker-field {
+        position: relative;
+        width: 100%;
+        height: 150px;
+        border: 1px solid #554a3b;
+        border-radius: 6px;
+        touch-action: none;
+        cursor: crosshair;
+        background: #ff9900;
+    }
+
+    .picker-cursor {
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        margin: -8px 0 0 -8px;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.85), 0 0 6px rgba(0, 0, 0, 0.7);
+        pointer-events: none;
+    }
+
+    .hue-slider {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 20px;
+        margin-top: 12px;
+        border: 1px solid #554a3b;
+        border-radius: 3px;
+        outline: none;
+        background: linear-gradient(
+            to right,
+            hsl(0,100%,50%) 0%,
+            hsl(30,100%,50%) 8.33%,
+            hsl(60,100%,50%) 16.66%,
+            hsl(90,100%,50%) 25%,
+            hsl(120,100%,50%) 33.33%,
+            hsl(150,100%,50%) 41.66%,
+            hsl(180,100%,50%) 50%,
+            hsl(210,100%,50%) 58.33%,
+            hsl(240,100%,50%) 66.66%,
+            hsl(270,100%,50%) 75%,
+            hsl(300,100%,50%) 83.33%,
+            hsl(330,100%,50%) 91.66%,
+            hsl(360,100%,50%) 100%
+        );
+    }
+
+    .hue-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 10px;
+        height: 26px;
+        background: #fff;
+        border: 1px solid #000;
+        border-radius: 2px;
+        cursor: pointer;
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+    }
+
+    /* ===== TUTORIAL OVERLAY ===== */
+    .tutorial-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 100000;
+        display: none;
+        background: rgba(0, 0, 0, 0.72);
+        pointer-events: none;
+    }
+
+    .tutorial-overlay.active {
+        display: block;
+    }
+
+    .tutorial-spot {
+        position: absolute;
+        border: 2px solid #00c6e6;
+        border-radius: 6px;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72), 0 0 18px rgba(0, 198, 230, 0.75);
+        transition: all 0.18s ease;
+        pointer-events: none;
+    }
+
+    .tutorial-card {
+        position: absolute;
+        width: min(320px, calc(100vw - 24px));
+        background: #0c1812;
+        border: 1px solid #00c6e6;
+        border-radius: 10px;
+        padding: 12px 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+        pointer-events: auto;
+        transition: all 0.18s ease;
+    }
+
+    .tutorial-step {
+        font-size: 0.65em;
+        letter-spacing: 2px;
+        color: #6f8a80;
+        font-weight: bold;
+        margin-bottom: 6px;
+    }
+
+    .tutorial-card p {
+        font-size: 0.82em;
+        line-height: 1.55;
+        color: #e6ded0;
+        margin-bottom: 12px;
+    }
+
+    .tutorial-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+
+    .tutorial-skip,
+    .tutorial-next {
+        font-family: inherit;
+        font-size: 0.72em;
+        font-weight: bold;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 7px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        touch-action: manipulation;
+        transition: all 0.15s;
+    }
+
+    .tutorial-skip {
+        background: transparent;
+        border: 1px solid #2a3a30;
+        color: #9fb3ac;
+    }
+
+    .tutorial-skip:hover {
+        border-color: #6f8a80;
+        color: #fff;
+    }
+
+    .tutorial-next {
+        background: rgba(0, 198, 230, 0.14);
+        border: 1px solid #00c6e6;
+        color: #00c6e6;
+    }
+
+    .tutorial-next:hover {
+        background: #00c6e6;
+        color: #0a0a00;
+        box-shadow: 0 0 10px rgba(0, 198, 230, 0.8);
+    }
+
+    /* Compact toolbar: in landscape use height, not width */
+    @media (max-height: 520px) {
+        .industrial-toolbar {
+            gap: 8px;
+            padding: 5px 8px;
+        }
+
+        .terminal-large-box {
+            flex: 0 0 76px;
+            width: 76px;
+            height: 35px;
+        }
+
+        .png-icons-slot {
+            gap: 8px;
+            margin-left: 0;
+        }
+
+        .icon-box {
+            width: 35px;
+            height: 35px;
+        }
+
+        .color-tool {
+            margin-left: 0;
+        }
+
+        .toolbar-size {
+            margin: 0 5px;
+        }
+
+        .right-section-top {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            position: relative;
+            padding: 0;
+            flex: 0 0 auto;
+            margin-left: -4px;
+        }
+
+        .setup-box-btn {
+            height: 35px;
+            padding: 0 3px;
+        }
+
+        .clear-box-btn {
+            height: 35px;
+            padding: 0 3px;
+        }
+
+        .setup-box-btn img,
+        .clear-box-btn img {
+            height: 26px;
+        }
+
+        .menu-hamburger {
+            width: 35px;
+            height: 35px;
+        }
+
+        .menu-hamburger::before {
+            width: 24px;
+            height: 22px;
+            background-size: 100% 2px;
+        }
+
+        /* compact background carousel on short screens */
+        #backgroundModal {
+            padding: 6px 8px;
+        }
+        #backgroundModal .terminal-modal-header {
+            padding-bottom: 5px;
+            margin-bottom: 6px;
+            font-size: 0.72em;
+        }
+        .bg-modal-counter {
+            font-size: 0.78em;
+        }
+        .bg-arrow {
+            width: 36px;
+            height: 36px;
+            font-size: 15px;
+        }
+        .bg-arrow-left { left: 5px; }
+        .bg-arrow-right { right: 5px; }
+        .bg-carousel-footer {
+            padding-top: 5px;
+        }
+        .bg-carousel-use {
+            padding: 5px 10px;
+            font-size: 0.72em;
+        }
+        .bg-carousel-hint {
+            display: none;
+        }
+        .bg-slide-label {
+            font-size: 0.68em;
+            padding: 5px 8px 4px;
+        }
+
+        /* compact info modal on short screens */
+        #infoModal {
+            padding: 12px 16px;
+        }
+        .info-content-wrapper {
+            gap: 10px;
+        }
+        .info-text-small {
+            font-size: 1em;
+            line-height: 1.5;
+        }
+        .info-icons-grid {
+            gap: 12px;
+        }
+        .info-icon-square {
+            width: 56px;
+            height: 56px;
+        }
+        .info-icon-label {
+            font-size: 0.66em;
+        }
+        .info-external-link,
+        .info-site-link {
+            font-size: 1em;
+        }
+
+        .controls-modal,
+        .color-modal {
+            padding: 12px;
+        }
+        .control-row {
+            margin-bottom: 9px;
+        }
+        .picker-field {
+            height: 110px;
+        }
+    }
+</style>
+</head>
+
+<body>
+    <div class="app-container">
+
+        <div class="industrial-toolbar">
+            <div class="terminal-large-box" id="cleanPixelTerminal"
+                 title="Tool selector (Swipe to change Tool)">
+                <canvas id="vramCanvas"></canvas>
+            </div>
+
+            <div class="center-section-top">
+                <div class="png-icons-slot" id="toolsSlot">
+                    <button type="button" class="icon-box active" id="toolBtn1" title="Round Nib" onclick="selectTool(1)">
+                        <img src="images/tools/bullet.png" alt="Round Nib"
+                             onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ffaa00;font-size:14px;font-weight:bold;\'>1</span>'">
+                    </button>
+                    <button type="button" class="icon-box" id="toolBtn2" title="Square Nib" onclick="selectTool(2)">
+                        <img src="images/tools/chisel.png" alt="Square Nib"
+                             onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ffaa00;font-size:14px;font-weight:bold;\'>2</span>'">
+                    </button>
+                    <button type="button" class="icon-box" id="toolBtn3" title="Dirty Spray" onclick="selectTool(3)">
+                        <img src="images/tools/spray.png" alt="Dirty Spray"
+                             onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ffaa00;font-size:14px;font-weight:bold;\'>3</span>'">
+                    </button>
+                    <button type="button" class="icon-box" id="toolBtn4" title="Faded Triangle" onclick="selectTool(4)">
+                        <img src="images/tools/metal.png" alt="Faded Triangle"
+                             onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ffaa00;font-size:14px;font-weight:bold;\'>4</span>'">
+                    </button>
+                    <button type="button" class="icon-box" id="toolBtn5" title="Solid Marker Mix" onclick="selectTool(5)">
+                        <img src="images/tools/solid.png" alt="Solid Marker Mix"
+                             onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ffaa00;font-size:14px;font-weight:bold;\'>5</span>'">
+                    </button>
+                </div>
+
+                <div class="sliders-vertical-stack" style="display: none;">
+                    <div class="tool-group">
+                        <span>DRIPS:</span>
+                        <input type="range" id="dripFreq" class="industrial-slider" min="0" max="100" value="3">
+                    </div>
+                    <div class="tool-group">
+                        <span>PRESS:</span>
+                        <input type="range" id="pressionSens" class="industrial-slider" min="0" max="100" value="30">
+                    </div>
+                </div>
+            </div>
+
+            <div class="toolbar-size">
+                <input type="range" id="inkSize"
+                       class="industrial-slider size-slider"
+                       min="1" max="25" value="6"
+                       title="Stroke Size">
+            </div>
+
+            <button type="button" class="clear-box-btn" id="clearBtn" onclick="clearWall()" title="Clear screen">
+                <img src="images/ico/buff.png" alt="CLEAR"
+                     onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ff6b35;font-weight:bold;font-size:14px;\'>CLEAR</span>'">
+            </button>
+
+            <button type="button" class="setup-box-btn" id="setupBtn" onclick="openModal('controlsModal')" title="Setup">
+                <img src="images/ico/adjust.png" alt="SETUP"
+                     onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#0ea158;font-weight:bold;font-size:18px;\'>SETUP</span>'">
+            </button>
+
+            <button type="button" class="icon-box color-tool" id="colorBtn" onclick="openModal('colorModal')" title="Colour">
+                <span class="color-fill" id="colorFill"></span>
+            </button>
+
+            <div class="right-section-top">
+                <button type="button" class="menu-hamburger" id="menuBtn" onclick="toggleDropdown(event)" title="Options Menu">&#8801;</button>
+
+                <div id="actionDropdown" class="dropdown-menu">
+                    <button type="button" class="dropdown-item" onclick="openModal('backgroundModal')">Background</button>
+                    <button type="button" class="dropdown-item" onclick="openModal('uploadModal')">Upload</button>
+                    <button type="button" class="dropdown-item" onclick="saveAndShareWallResult()">Save &amp; Share</button>
+                    <button type="button" class="dropdown-item info-special" onclick="openModal('infoModal')">Info</button>
+                    <button type="button" class="dropdown-item quit-special" onclick="openModal('quitModal')">Quit</button>
+                </div>
+            </div>
+        </div>
+
+        <input type="file" id="bgUploadInput" accept="image/*"
+               style="display: none;" onchange="loadBackground(event)">
+        <input type="color" id="primaryColorPicker" value="#2c8576" style="display: none;">
+        <div class="industrial-canvas-container">
+            <canvas id="wallCanvas"></canvas>
+            <div class="watermark-logo">☠︎︎ NKNW_Lab ☠︎︎</div>
+        </div>
+    </div>
+
+    <!-- COLOUR MODAL -->
+    <div id="colorModal" class="color-modal">
+        <div class="terminal-modal-header">
+            <span>&gt; COLOR _</span>
+            <button type="button" class="terminal-modal-close" onclick="closeModals()">[X]</button>
+        </div>
+        <div class="terminal-modal-body">
+            <div class="picker-field" id="pickerField">
+                <div class="picker-cursor" id="pickerCursor"></div>
+            </div>
+            <input type="range" id="hueSlider" class="hue-slider" min="0" max="360" value="40">
+        </div>
+    </div>
+
+    <!-- SETUP MODAL -->
+    <div id="controlsModal" class="controls-modal">
+        <div class="terminal-modal-header">
+            <span>&gt; SETUP _</span>
+            <button type="button" class="terminal-modal-close" onclick="closeModals()">[X]</button>
+        </div>
+        <div class="terminal-modal-body">
+            <div class="control-row">
+                <label>SIZE: <span id="modalSizeVal">6</span></label>
+                <input type="range" id="modalInkSize" class="industrial-slider size-slider"
+                       min="1" max="25" value="6">
+            </div>
+            <div class="control-row">
+                <label>STROKE SPEED: <span id="modalSpeedVal">30</span></label>
+                <input type="range" id="modalSpeed" class="industrial-slider"
+                       min="1" max="100" value="30">
+            </div>
+            <div class="control-row">
+                <label>DRIPS: <span id="modalDripVal">3</span></label>
+                <input type="range" id="modalDripFreq" class="industrial-slider"
+                       min="0" max="100" value="3">
+            </div>
+            <div class="control-row">
+                <label>PRESS: <span id="modalPressVal">30</span></label>
+                <input type="range" id="modalPressionSens" class="industrial-slider"
+                       min="0" max="100" value="30">
+            </div>
+        </div>
+    </div>
+
+    <!-- BACKGROUND MODAL (carousel: one big background at a time + swipe + arrows) -->
+    <div id="backgroundModal" class="terminal-fullscreen-modal">
+        <div class="terminal-modal-header">
+            <span>&gt; BACKGROUND _</span>
+            <span class="bg-modal-counter" id="bgCounter">1 / 31</span>
+            <button type="button" class="terminal-modal-close" onclick="closeModals()">[X]</button>
+        </div>
+
+        <div class="bg-carousel-wrap">
+            <div class="bg-carousel-viewport" id="bgCarouselViewport">
+                <div class="bg-carousel-track" id="bgCarouselTrack"></div>
+            </div>
+            <button type="button" class="bg-arrow bg-arrow-left" id="bgArrowPrev" onclick="bgPrev()" title="Previous background">&#10094;</button>
+            <button type="button" class="bg-arrow bg-arrow-right" id="bgArrowNext" onclick="bgNext()" title="Next background">&#10095;</button>
+        </div>
+
+        <div class="bg-carousel-footer">
+            <span class="bg-carousel-label" id="bgCarouselLabel">&gt; TRANSPARENT _</span>
+            <span class="bg-carousel-hint">SWIPE &harr; / TAP</span>
+            <button type="button" class="bg-carousel-use" id="bgUseBtn" onclick="bgUseCurrent()">SELECT</button>
+        </div>
+    </div>
+
+    <!-- UPLOAD MODAL -->
+    <div id="uploadModal" class="terminal-upload-modal">
+        <div class="terminal-modal-header">
+            <span>&gt; UPLOAD</span>
+            <button type="button" class="terminal-modal-close" onclick="closeModals()">[X]</button>
+        </div>
+        <div class="terminal-modal-body" style="display: flex; justify-content: center; align-items: center;">
+            <button type="button" class="square-upload-btn"
+                    onclick="document.getElementById('bgUploadInput').click(); closeModals();">UPLOAD</button>
+        </div>
+    </div>
+
+    <!-- QUIT MODAL -->
+    <div id="quitModal" class="terminal-upload-modal" style="height: 150px;">
+        <div class="terminal-modal-header">
+            <span>&gt; EXIT</span>
+            <button type="button" class="terminal-modal-close" onclick="closeModals()">[X]</button>
+        </div>
+        <div class="terminal-modal-body" style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;">
+            <p style="font-size: 0.9em; font-weight: bold; color: #ff6b35; text-align: center;">&gt; ARE YOU SURE?</p>
+            <div class="quit-btn-container">
+                <button type="button" class="quit-confirm-btn" onclick="confirmQuit()">YES</button>
+                <button type="button" class="quit-cancel-btn" onclick="closeModals()">NO</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- INFO MODAL -->
+    <div id="infoModal" class="terminal-fullscreen-modal">
+        <div class="terminal-modal-header">
+            <span>&gt; INFO _</span>
+            <button type="button" class="terminal-modal-close" onclick="closeModals()">[X]</button>
+        </div>
+        <div class="terminal-modal-body">
+            <div class="info-content-wrapper">
+                <p class="info-text-small">
+                    A pocket tag machine for graffiti writers, built after the original "Tags" app and the KATSU app.
+                    <br><br>
+                    Both are old and quiet now. The canvas saves as a PNG with a transparent background, and you can choose from 30 backgrounds and a full colour range.
+                    <br><br>
+                    No ads, no subscription, no account, nothing to sign up for.
+                    Your drawing stays on this device, and nothing loads over the network while you draw.
+                    Built with standard Android tools.
+                </p>
+
+                <div class="info-last-line">
+                    <span class="info-text-small">See you on the bench!</span>
+                    <a href="https://github.com/NKNW-Lab/Handstyler" target="_blank" rel="noopener" class="info-external-link" onclick="openExternalLink(this.href); return false;">&gt; Source Code _</a>
+                </div>
+
+                <div class="info-icons-grid cols-4">
+                    <div class="info-icon-container">
+                        <a href="https://buymeacoffee.com/nknw_lab" target="_blank" rel="noopener" class="info-icon-link" onclick="openExternalLink(this.href); return false;">
+                            <div class="info-icon-square" title="Buy me a coffee!">
+                                <img src="images/ico/coffee.png" alt="Coffee" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ff6b35;font-size:28px;\'>&#9749;</span>'">
+                            </div>
+                            <span class="info-icon-label">Coffee</span>
+                        </a>
+                    </div>
+
+                    <div class="info-icon-container">
+                        <a href="https://mempool.space/address/bc1qlhlx0da26s0gvjcr5e3du3m4ry53d56f2l7fdw" target="_blank" rel="noopener" class="info-icon-link" onclick="openExternalLink(this.href); return false;">
+                            <div class="info-icon-square" title="Bitcoin">
+                                <img src="images/ico/btc.png" alt="Bitcoin" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ff6b35;font-size:28px;\'>&#8383;</span>'">
+                            </div>
+                            <span class="info-icon-label">Btc</span>
+                        </a>
+                    </div>
+
+                    <div class="info-icon-container">
+                        <a href="https://www.gamedevfreelance.com/users/nknw_lab" target="_blank" rel="noopener" class="info-icon-link" onclick="openExternalLink(this.href); return false;">
+                            <div class="info-icon-square" title="Gdm">
+                                <img src="images/ico/gdm.png" alt="Gdm" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ff6b35;font-size:18px;font-weight:bold;\'>GDM</span>'">
+                            </div>
+                            <span class="info-icon-label">Gdm</span>
+                        </a>
+                    </div>
+
+                    <div class="info-icon-container">
+                        <a href="https://nknw.itch.io/" target="_blank" rel="noopener" class="info-icon-link" onclick="openExternalLink(this.href); return false;">
+                            <div class="info-icon-square" title="Itch.io">
+                                <img src="images/ico/itch.png" alt="Itch.io" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ff6b35;font-size:18px;font-weight:bold;\'>ITCH</span>'">
+                            </div>
+                            <span class="info-icon-label">Itch.io</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="info-icons-grid cols-3">
+                    <div class="info-icon-container">
+                        <a href="https://www.fab.com/sellers/NKNW_Lab" target="_blank" rel="noopener" class="info-icon-link" onclick="openExternalLink(this.href); return false;">
+                            <div class="info-icon-square" title="fab">
+                                <img src="images/ico/fab.png" alt="Fab" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ff6b35;font-size:18px;font-weight:bold;\'>FAB</span>'">
+                            </div>
+                            <span class="info-icon-label">Fab</span>
+                        </a>
+                    </div>
+
+                    <div class="info-icon-container">
+                        <a href="https://njump.to/nprofile1qqsv0guctkve2g24r63wxh4zkp8jta09tk9k0kz6s73klzateusr8yqpr4mhxue69uhkummnw3ezucnfw33k76twv4ezuum0vd5kzmp0qyg8wumn8ghj7mn0wd68ytnddakj7qg4waehxw309ahx7um5wghx77r5wghxgetk9udgjnuh" target="_blank" rel="noopener" class="info-icon-link" onclick="openExternalLink(this.href); return false;">
+                            <div class="info-icon-square" title="Amethyst">
+                                <img src="images/ico/amet.png" alt="Amethyst" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ff6b35;font-size:18px;font-weight:bold;\'>AMT</span>'">
+                            </div>
+                            <span class="info-icon-label">Amethyst</span>
+                        </a>
+                    </div>
+
+                    <div class="info-icon-container">
+                        <a href="https://www.instagram.com/nknw_lab" target="_blank" rel="noopener" class="info-icon-link" onclick="openExternalLink(this.href); return false;">
+                            <div class="info-icon-square" title="Instagram">
+                                <img src="images/ico/insta.png" alt="Instagram" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ff6b35;font-size:18px;font-weight:bold;\'>IG</span>'">
+                            </div>
+                            <span class="info-icon-label">Instagram</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <a href="https://nknwlab.com/" target="_blank" rel="noopener" class="info-site-link" onclick="openExternalLink(this.href); return false;">&gt; NKNWLAB.COM &lt;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TUTORIAL OVERLAY -->
+    <div id="tutorialOverlay" class="tutorial-overlay">
+        <div id="tutorialSpot" class="tutorial-spot"></div>
+        <div id="tutorialCard" class="tutorial-card">
+            <div class="tutorial-step" id="tutorialStep">1 / 8</div>
+            <p id="tutorialText"></p>
+            <div class="tutorial-actions">
+                <button type="button" class="tutorial-skip" id="tutorialSkip">SKIP</button>
+                <button type="button" class="tutorial-next" id="tutorialNext">NEXT</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toastSavedAlert" class="toast-saved-alert">&gt; SAVED!</div>
+
+    <script>
+        const terminalBox = document.getElementById('cleanPixelTerminal');
+        const vramCanvas = document.getElementById('vramCanvas');
+        const vramCtx = vramCanvas.getContext('2d');
+
+        let vramPixels = [];
+        let vramScanlines = [];
+        let vramThemeColor = '#2ecc71';
+
+        function hexToRgba(hex, a) {
+            let num = parseInt(hex.replace('#', ''), 16);
+            let r = (num >> 16) & 255;
+            let g = (num >> 8) & 255;
+            let b = num & 255;
+            return `rgba(${r}, ${g}, ${b}, ${a})`;
+        }
+
+        function updateTerminalTheme(hex) {
+            vramThemeColor = hex;
+            if (terminalBox) {
+                terminalBox.style.borderColor = hex;
+                terminalBox.style.boxShadow = `inset 0 0 20px ${hexToRgba(hex, 0.3)}, 0 0 25px ${hexToRgba(hex, 0.7)}`;
+            }
+            const fill = document.getElementById('colorFill');
+            if (fill) fill.style.background = hex;
+        }
+
+        function resizeVramCanvas() {
+            const rect = terminalBox.getBoundingClientRect();
+            vramCanvas.width = rect.width;
+            vramCanvas.height = rect.height;
+        }
+        resizeVramCanvas();
+
+        for (let i = 0; i < 3; i++) {
+            vramScanlines.push({
+                y: Math.random() * 70,
+                speed: 0.3 + Math.random() * 0.5,
+                opacity: 0.1 + Math.random() * 0.1
+            });
+        }
+
+        function drawVram() {
+            vramCtx.clearRect(0, 0, vramCanvas.width, vramCanvas.height);
+
+            if (vramPixels.length < 40 && Math.random() > 0.7) {
+                vramPixels.push({
+                    x: Math.random() * vramCanvas.width,
+                    y: Math.random() * vramCanvas.height,
+                    life: 1.0,
+                    size: Math.random() > 0.8 ? 2 : 1,
+                    vx: (Math.random() - 0.5) * 0.3,
+                    vy: (Math.random() - 0.5) * 0.3,
+                    color: Math.random() > 0.9 ? '#ffffff' : vramThemeColor
+                });
+            }
+
+            vramPixels = vramPixels.filter(p => {
+                p.life -= 0.015;
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.life <= 0) return false;
+
+                vramCtx.fillStyle = p.color;
+                vramCtx.globalAlpha = p.life;
+                vramCtx.fillRect(p.x, p.y, p.size, p.size);
+                return true;
+            });
+
+            vramCtx.globalAlpha = 1;
+
+            vramScanlines.forEach(scan => {
+                scan.y += scan.speed;
+                if (scan.y > vramCanvas.height) scan.y = 0;
+                vramCtx.fillStyle = hexToRgba(vramThemeColor, scan.opacity);
+                vramCtx.fillRect(0, scan.y, vramCanvas.width, 1);
+            });
+
+            if (Math.random() > 0.98) {
+                vramCtx.fillStyle = hexToRgba(vramThemeColor, 0.06);
+                vramCtx.fillRect(0, 0, vramCanvas.width, vramCanvas.height);
+            }
+
+            requestAnimationFrame(drawVram);
+        }
+        drawVram();
+
+        function addVramPixel(x, y) {
+            for (let i = 0; i < 3; i++) {
+                vramPixels.push({
+                    x: x + (Math.random() * 10 - 5),
+                    y: y + (Math.random() * 10 - 5),
+                    life: 1.0,
+                    size: Math.random() > 0.5 ? 2 : 1,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    color: Math.random() > 0.7 ? vramThemeColor : '#ffffff'
+                });
+            }
+        }
+
+        let touchStartX = 0, touchStartY = 0;
+        terminalBox.addEventListener('touchstart', (e) => {
+            if (e.touches && e.touches[0]) {
+                const rect = terminalBox.getBoundingClientRect();
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                addVramPixel(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+            }
+        }, { passive: true });
+
+        terminalBox.addEventListener('touchmove', (e) => {
+            if (e.touches && e.touches[0]) {
+                const rect = terminalBox.getBoundingClientRect();
+                addVramPixel(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+            }
+        }, { passive: true });
+
+        terminalBox.addEventListener('touchend', (e) => {
+            if (e.changedTouches && e.changedTouches[0]) {
+                const diffX = e.changedTouches[0].clientX - touchStartX;
+                const diffY = e.changedTouches[0].clientY - touchStartY;
+                if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 25) {
+                    if (diffX > 0) selectTool(activeTool >= 5 ? 1 : activeTool + 1);
+                    else selectTool(activeTool <= 1 ? 5 : activeTool - 1);
+                }
+            }
+        }, { passive: true });
+
+        let isMouseDownOnTerminal = false, mouseStartX = 0;
+        terminalBox.addEventListener('mousedown', (e) => {
+            isMouseDownOnTerminal = true;
+            mouseStartX = e.clientX;
+            const rect = terminalBox.getBoundingClientRect();
+            addVramPixel(e.clientX - rect.left, e.clientY - rect.top);
+        });
+
+        terminalBox.addEventListener('mousemove', (e) => {
+            if (isMouseDownOnTerminal) {
+                const rect = terminalBox.getBoundingClientRect();
+                addVramPixel(e.clientX - rect.left, e.clientY - rect.top);
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (!isMouseDownOnTerminal) return;
+            isMouseDownOnTerminal = false;
+            const diffX = e.clientX - mouseStartX;
+            if (Math.abs(diffX) > 25) {
+                if (diffX > 0) selectTool(activeTool >= 5 ? 1 : activeTool + 1);
+                else selectTool(activeTool <= 1 ? 5 : activeTool - 1);
+            }
+        });
+
+        const totalItems = 16;
+        const cols = 4;
+        const rows = 4;
+        const cellWidth = 100 / cols;
+        const cellHeight = 100 / rows;
+
+        let ghostIndex = 0;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (ghostIndex >= totalItems) break;
+                const ghostText = document.createElement('div');
+                ghostText.className = 'floating-ghost-text';
+                ghostText.innerHTML = '&gt;_ NKNW_LAB<br>| KYT_Crew &#9760;';
+                const startX = (c * cellWidth + Math.random() * (cellWidth * 0.4)) + '%';
+                const startY = (r * cellHeight + Math.random() * (cellHeight * 0.4)) + '%';
+                ghostText.style.setProperty('--start-x', startX);
+                ghostText.style.setProperty('--start-y', startY);
+                ghostText.style.setProperty('--anim-dur', (0.4 + Math.random() * 0.4) + 's');
+                ghostText.style.opacity = '0.12';
+                terminalBox.appendChild(ghostText);
+                ghostIndex++;
+            }
+        }
+
+        /* External links must leave the WebView, otherwise the app disappears
+           with no browser chrome and no way back. */
+        function openExternalLink(url) {
+            if (typeof cordova !== 'undefined' && cordova.InAppBrowser) {
+                cordova.InAppBrowser.open(url, '_system');
+            } else if (typeof navigator !== 'undefined' && navigator.app && navigator.app.loadUrl) {
+                navigator.app.loadUrl(url, { openExternal: true });
+            } else {
+                window.open(url, '_system');
+            }
+            return false;
+        }
+
+        let backButtonBound = false;
+
+        function onBackButton(e) {
+            e.preventDefault();
+            if (document.getElementById('tutorialOverlay').classList.contains('active')) {
+                endTutorial();
+                return;
+            }
+            const openModals = document.querySelectorAll('.terminal-fullscreen-modal.active, .terminal-upload-modal.active, .controls-modal.active, .color-modal.active');
+            if (openModals.length > 0) {
+                closeModals();
+                return;
+            }
+            /* Android back button uses the app's own quit modal, not a native confirm() */
+            openModal('quitModal');
+        }
+
+        function bindBackButton() {
+            if (backButtonBound) return;
+            backButtonBound = true;
+            document.addEventListener('backbutton', onBackButton, false);
+        }
+
+        document.addEventListener('deviceready', bindBackButton, false);
+        /* if deviceready already fired before this script ran, bind anyway */
+        if (typeof cordova !== 'undefined') bindBackButton();
+        const canvas = document.getElementById('wallCanvas');
+        const ctx = canvas.getContext('2d');
+        let backgroundLoadedImage = null;
+        let currentBrightness = 60;
+        let activeTool = 1;
+        let solidMarkerDistance = 0;
+        let sprayHoldTimer = null;
+        let hasDrippedThisStroke = false;
+        let currentStrokeColor = '#2c8576';
+        let currentStrokeX = 0;
+        let currentStrokeY = 0;
+        let viewW = 0, viewH = 0;
+        let strokeSpeed = 30;
+        let saturation = 100;
+        let baseColor = '#2c8576';
+
+        function selectTool(idx) {
+            activeTool = idx;
+            for (let i = 1; i <= 5; i++) {
+                const btn = document.getElementById(`toolBtn${i}`);
+                if (btn) btn.classList.remove('active');
+            }
+            const activeBtn = document.getElementById(`toolBtn${idx}`);
+            if (activeBtn) activeBtn.classList.add('active');
+            resetColorMix();
+        }
+
+        function resetColorMix() {
+            solidMarkerDistance = 0;
+            lastTime = performance.now();
+        }
+
+        function toggleDropdown(e) {
+            e.stopPropagation();
+            closeAllMenus();
+            document.getElementById('actionDropdown').classList.toggle('active');
+        }
+
+        function closeAllMenus() {
+            const dd = document.getElementById('actionDropdown');
+            if (dd) dd.classList.remove('active');
+        }
+
+        function openModal(modalId) {
+            closeAllMenus();
+            if (tutorialActive) endTutorial();
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            modal.classList.add('active');
+            if (modalId === 'backgroundModal') {
+                requestAnimationFrame(function () { bgSyncToActive(); });
+            }
+        }
+
+        function closeModals() {
+            document.querySelectorAll('.terminal-fullscreen-modal, .terminal-upload-modal, .controls-modal, .color-modal').forEach(m => m.classList.remove('active'));
+        }
+
+ function confirmQuit() {
+            let done = false;
+
+            try {
+                if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+                    window.Capacitor.Plugins.App.exitApp();
+                    done = true;
+                }
+            } catch (e) {}
+
+            if (!done) {
+                try {
+                    if (navigator.app && typeof navigator.app.exitApp === 'function') {
+                        navigator.app.exitApp();
+                        done = true;
+                    }
+                } catch (e) {}
+            }
+
+            if (!done) {
+                try {
+                    if (window.AndroidNative && window.AndroidNative.exitApp) {
+                        window.AndroidNative.exitApp();
+                        done = true;
+                    }
+                } catch (e) {}
+            }
+        }
+
+        window.addEventListener('click', closeAllMenus);
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.round(rect.width * dpr);
+            canvas.height = Math.round(rect.height * dpr);
+            canvas.style.imageRendering = 'auto';
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.imageSmoothingEnabled = true;
+            viewW = rect.width;
+            viewH = rect.height;
+            redrawCanvas();
+        }
+        window.addEventListener('load', resizeCanvas);
+
+        /* pulls saturation toward grey, then refreshes the picker + terminal frame */
+        function applySaturation(hex, pct) {
+            const num = parseInt(hex.replace('#', ''), 16);
+            let r = (num >> 16) & 255, g = (num >> 8) & 255, b = num & 255;
+            const grey = Math.round(r * 0.299 + g * 0.587 + b * 0.114);
+            const w = pct / 100;
+            r = Math.round(grey + (r - grey) * w);
+            g = Math.round(grey + (g - grey) * w);
+            b = Math.round(grey + (b - grey) * w);
+            return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+        }
+
+        function refreshActiveColor() {
+            const finalColor = applySaturation(baseColor, saturation);
+            const colorPicker = document.getElementById('primaryColorPicker');
+            if (colorPicker) colorPicker.value = finalColor;
+            updateTerminalTheme(finalColor);
+        }
+
+        /* ---------- colour picker ---------- */
+        const pickerField = document.getElementById('pickerField');
+        const pickerCursor = document.getElementById('pickerCursor');
+        const hueSlider = document.getElementById('hueSlider');
+
+        let pickH = 40, pickS = 100, pickV = 100;
+
+        function hsvToHex(h, s, v) {
+            h = ((h % 360) + 360) % 360;
+            const c = v * s;
+            const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+            const m = v - c;
+            let r = 0, g = 0, b = 0;
+            if (h < 60) { r = c; g = x; }
+            else if (h < 120) { r = x; g = c; }
+            else if (h < 180) { g = c; b = x; }
+            else if (h < 240) { g = x; b = c; }
+            else if (h < 300) { r = x; b = c; }
+            else { r = c; b = x; }
+            const to = n => Math.round((n + m) * 255).toString(16).padStart(2, '0');
+            return '#' + to(r) + to(g) + to(b);
+        }
+
+        function paintField() {
+            if (!pickerField) return;
+            pickerField.style.background =
+                'linear-gradient(to bottom, rgba(0,0,0,0), #000), ' +
+                'linear-gradient(to right, #fff, hsl(' + pickH + ',100%,50%))';
+        }
+
+        function placeCursor() {
+            if (!pickerCursor) return;
+            pickerCursor.style.left = pickS + '%';
+            pickerCursor.style.top = (100 - pickV) + '%';
+        }
+
+        function pushColor() {
+            baseColor = hsvToHex(pickH, pickS / 100, pickV / 100);
+            refreshActiveColor();
+            resetColorMix();
+        }
+
+        function fieldFromPoint(clientX, clientY) {
+            if (!pickerField) return;
+            const r = pickerField.getBoundingClientRect();
+            if (!r.width || !r.height) return;
+            pickS = Math.max(0, Math.min(100, ((clientX - r.left) / r.width) * 100));
+            pickV = Math.max(0, Math.min(100, (1 - (clientY - r.top) / r.height) * 100));
+            placeCursor();
+            pushColor();
+        }
+
+        let isDraggingField = false;
+
+        if (pickerField) {
+            pickerField.addEventListener('touchstart', function (e) {
+                if (e.touches && e.touches[0]) fieldFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+                e.preventDefault();
+            }, { passive: false });
+
+            pickerField.addEventListener('touchmove', function (e) {
+                if (e.touches && e.touches[0]) fieldFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+                e.preventDefault();
+            }, { passive: false });
+
+            pickerField.addEventListener('mousedown', function (e) {
+                isDraggingField = true;
+                fieldFromPoint(e.clientX, e.clientY);
+            });
+        }
+
+        window.addEventListener('mousemove', function (e) {
+            if (isDraggingField) fieldFromPoint(e.clientX, e.clientY);
+        });
+        window.addEventListener('mouseup', function () {
+            isDraggingField = false;
+        });
+
+        if (hueSlider) {
+            hueSlider.addEventListener('input', function () {
+                pickH = Number(this.value);
+                paintField();
+                pushColor();
+            });
+        }
+
+        let isDrawing = false;
+        let targetX = 0, targetY = 0, smoothX = 0, smoothY = 0, lastX = 0, lastY = 0, lastTime = 0;
+        let animationFrameId = null;
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            if (e.touches && e.touches[0]) {
+                return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+            }
+            return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        }
+
+        function startDrawingAction(pos) {
+            isDrawing = true;
+            solidMarkerDistance = 0;
+            targetX = pos.x; targetY = pos.y; smoothX = pos.x; smoothY = pos.y; lastX = pos.x; lastY = pos.y;
+            lastTime = performance.now();
+
+            if (activeTool === 3) {
+                hasDrippedThisStroke = false;
+                currentStrokeX = pos.x;
+                currentStrokeY = pos.y;
+                if (sprayHoldTimer) clearTimeout(sprayHoldTimer);
+                sprayHoldTimer = setTimeout(() => {
+                    if (isDrawing && activeTool === 3 && !hasDrippedThisStroke) {
+                        createDrip(currentStrokeX, currentStrokeY, currentStrokeColor, parseFloat(document.getElementById('inkSize').value));
+                        hasDrippedThisStroke = true;
+                    }
+                }, 2000);
+            }
+
+            if (!animationFrameId) animationFrameId = requestAnimationFrame(renderLoop);
+        }
+
+        function moveDrawingAction(pos) {
+            if (!isDrawing) return;
+            targetX = pos.x; targetY = pos.y;
+            currentStrokeX = pos.x;
+            currentStrokeY = pos.y;
+        }
+
+        function endDrawingAction() {
+            isDrawing = false;
+            if (sprayHoldTimer) clearTimeout(sprayHoldTimer);
+        }
+
+        canvas.addEventListener('mousedown', (e) => { startDrawingAction(getPos(e)); });
+        canvas.addEventListener('mousemove', (e) => { moveDrawingAction(getPos(e)); });
+        canvas.addEventListener('mouseup', () => { endDrawingAction(); });
+        canvas.addEventListener('mouseleave', () => { endDrawingAction(); });
+
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawingAction(getPos(e)); }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveDrawingAction(getPos(e)); }, { passive: false });
+        canvas.addEventListener('touchend', (e) => { e.preventDefault(); endDrawingAction(); }, { passive: false });
+        canvas.addEventListener('touchcancel', (e) => { e.preventDefault(); endDrawingAction(); }, { passive: false });
+
+        /* strokeSpeed 1..100 -> interpolation factor 0.06..0.75
+           low  = long trailing lag, high = pen follows the finger instantly */
+        function interpFactor() {
+            return 0.06 + (strokeSpeed / 100) * 0.69;
+        }
+
+        function renderLoop(currentTime) {
+            const base = interpFactor();
+            const interpSpeed = (activeTool === 3) ? Math.min(0.92, base * 1.8) : base;
+            if (isDrawing || Math.abs(targetX - smoothX) > 0.1 || Math.abs(targetY - smoothY) > 0.1) {
+                smoothX += (targetX - smoothX) * interpSpeed;
+                smoothY += (targetY - smoothY) * interpSpeed;
+                drawTo(smoothX, smoothY, currentTime);
+                animationFrameId = requestAnimationFrame(renderLoop);
+            } else {
+                animationFrameId = null;
+            }
+        }
+
+        function adjustColorBrightness(hex, percent) {
+            let num = parseInt(hex.replace('#', ''), 16);
+            let r = Math.min(255, Math.max(0, Math.round((num >> 16) * (percent / 100))));
+            let g = Math.min(255, Math.max(0, Math.round(((num >> 8) & 0x00FF) * (percent / 100))));
+            let b = Math.min(255, Math.max(0, Math.round((num & 0x0000FF) * (percent / 100))));
+            return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+        }
+
+        function mixHexColors(hex1, hex2, weight = 0.5) {
+            let c1 = parseInt(hex1.replace('#', ''), 16), c2 = parseInt(hex2.replace('#', ''), 16);
+            let r = Math.round((c1 >> 16) * (1 - weight) + (c2 >> 16) * weight);
+            let g = Math.round(((c1 >> 8) & 0x00FF) * (1 - weight) + ((c2 >> 8) & 0x00FF) * weight);
+            let b = Math.round((c1 & 0x0000FF) * (1 - weight) + (c2 & 0x0000FF) * weight);
+            return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+        }
+
+        function getDarkenedComplementaryColor(hex) {
+            let num = parseInt(hex.replace('#', ''), 16);
+            let r = Math.round((255 - (num >> 16)) * 0.75);
+            let g = Math.round((255 - ((num >> 8) & 0x00FF)) * 0.75);
+            let b = Math.round((255 - (num & 0x0000FF)) * 0.75);
+            return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+        }
+
+        function smoothstep(t) {
+            t = Math.max(0, Math.min(1, t));
+            return t * t * (3 - 2 * t);
+        }
+
+        function markerColorAt(dist, c1, c2) {
+            const solidBlock = 55, transitionZone = 60;
+            const cycle = (solidBlock + transitionZone) * 2;
+            let m = ((dist % cycle) + cycle) % cycle;
+            let w;
+            if (m < solidBlock) w = 0;
+            else if (m < solidBlock + transitionZone) w = smoothstep((m - solidBlock) / transitionZone);
+            else if (m < solidBlock * 2 + transitionZone) w = 1;
+            else w = smoothstep(1 - (m - (solidBlock * 2 + transitionZone)) / transitionZone);
+            return mixHexColors(c1, c2, w);
+        }
+
+        function drawTo(currentX, currentY, currentTime) {
+            const chosenColor = document.getElementById('primaryColorPicker').value;
+            let activeColor = adjustColorBrightness(chosenColor, currentBrightness);
+            currentStrokeColor = activeColor;
+
+            const baseSize = parseFloat(document.getElementById('inkSize').value);
+            const dripFreqSetting = document.getElementById('dripFreq').value / 100;
+            const pressSens = document.getElementById('pressionSens').value / 100;
+
+            const dx = currentX - lastX;
+            const dy = currentY - lastY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const timeDelta = Math.max(1, currentTime - lastTime);
+            const speed = distance / timeDelta;
+
+            let dynamicSize = Math.max(baseSize, Math.min(baseSize + (speed * pressSens * 2.5), baseSize * 3.5));
+            let allowDrips = true;
+
+            if (activeTool === 1) {
+                ctx.strokeStyle = activeColor;
+                ctx.lineWidth = dynamicSize;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(currentX, currentY);
+                ctx.stroke();
+            } else if (activeTool === 2) {
+                ctx.strokeStyle = activeColor;
+                ctx.lineWidth = dynamicSize * 1.2;
+                ctx.lineCap = 'square';
+                ctx.lineJoin = 'round';
+                const stepLen = Math.max(1, dynamicSize * 0.5);
+                const steps = Math.max(1, Math.ceil(distance / stepLen));
+                for (let i = 0; i < steps; i++) {
+                    const x1 = lastX + dx * (i / steps);
+                    const y1 = lastY + dy * (i / steps);
+                    const x2 = lastX + dx * ((i + 1) / steps);
+                    const y2 = lastY + dy * ((i + 1) / steps);
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                }
+            } else if (activeTool === 3) {
+                allowDrips = false;
+
+                const fatFactor = Math.min(2.6, 0.55 + speed * (1.0 + pressSens));
+                const sprayRadius = baseSize * 1.5 * fatFactor;
+                const coreAlpha = Math.max(0.5, Math.min(0.93, 0.93 - speed * 0.12));
+
+                const steps = Math.max(1, Math.min(16, Math.floor(distance / (sprayRadius * 0.35))));
+
+                for (let i = 0; i <= steps; i++) {
+                    const interpX = lastX + (dx * (i / steps));
+                    const interpY = lastY + (dy * (i / steps));
+
+                    const grad = ctx.createRadialGradient(interpX, interpY, 0, interpX, interpY, sprayRadius);
+                    grad.addColorStop(0.00, hexToRgba(activeColor, coreAlpha));
+                    grad.addColorStop(0.25, hexToRgba(activeColor, coreAlpha * 0.55));
+                    grad.addColorStop(0.50, hexToRgba(activeColor, coreAlpha * 0.28));
+                    grad.addColorStop(0.75, hexToRgba(activeColor, coreAlpha * 0.10));
+                    grad.addColorStop(1.00, hexToRgba(activeColor, 0));
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(interpX, interpY, sprayRadius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    const dots = Math.floor(dynamicSize * 3.2);
+                    for (let p = 0; p < dots; p++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const r = Math.pow(Math.random(), 1.5) * sprayRadius;
+                        const pf = r / sprayRadius;
+                        const dotR = (1 - pf) * 1.3 + 0.3;
+                        ctx.globalAlpha = (1 - pf) * coreAlpha * 0.35;
+                        ctx.fillStyle = activeColor;
+                        ctx.beginPath();
+                        ctx.arc(interpX + Math.cos(angle) * r, interpY + Math.sin(angle) * r, dotR, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    const over = Math.floor(dynamicSize * 1.2);
+                    for (let p = 0; p < over; p++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const r = sprayRadius * (1.0 + Math.random() * 0.35);
+                        const fade = 1 - ((r / sprayRadius - 1) / 0.35);
+                        const dotR = Math.random() * 0.9 + 0.3;
+                        ctx.globalAlpha = Math.max(0, coreAlpha * 0.12 * fade);
+                        ctx.fillStyle = activeColor;
+                        ctx.beginPath();
+                        ctx.arc(interpX + Math.cos(angle) * r, interpY + Math.sin(angle) * r, dotR, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.globalAlpha = 1;
+                }
+            } else if (activeTool === 4) {
+                ctx.fillStyle = activeColor;
+                const ballR = dynamicSize * 0.9;
+                const jitter = dynamicSize * 0.14;
+                const stepLen = Math.max(1, ballR * 0.5);
+                const steps = Math.max(1, Math.ceil(distance / stepLen));
+                for (let i = 0; i <= steps; i++) {
+                    const interpX = lastX + dx * (i / steps);
+                    const interpY = lastY + dy * (i / steps);
+                    const jx = (Math.random() - 0.5) * jitter;
+                    const jy = (Math.random() - 0.5) * jitter;
+                    const rr = ballR * (0.88 + Math.random() * 0.24);
+                    ctx.beginPath();
+                    ctx.arc(interpX + jx, interpY + jy, rr, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            } else if (activeTool === 5) {
+                allowDrips = false;
+                const secondaryColor = getDarkenedComplementaryColor(activeColor);
+
+                const colPrev = markerColorAt(solidMarkerDistance, activeColor, secondaryColor);
+                solidMarkerDistance += distance;
+                const colNow = markerColorAt(solidMarkerDistance, activeColor, secondaryColor);
+
+                const grad = ctx.createLinearGradient(lastX, lastY, currentX, currentY);
+                grad.addColorStop(0, colPrev);
+                grad.addColorStop(1, colNow);
+
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = dynamicSize;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(currentX, currentY);
+                ctx.stroke();
+            } else if (activeTool === 6) {
+                allowDrips = false;
+                const eraserRadius = baseSize * 1.8;
+                const steps = Math.max(1, Math.floor(distance / (eraserRadius * 0.5)));
+                for (let i = 0; i <= steps; i++) {
+                    const ex = lastX + dx * (i / steps);
+                    const ey = lastY + dy * (i / steps);
+                    eraseCircle(ex, ey, eraserRadius);
+                }
+            }
+
+            if (allowDrips && activeTool !== 3 && Math.random() < dripFreqSetting) createDrip(currentX, currentY, activeColor, baseSize);
+
+            lastX = currentX; lastY = currentY; lastTime = currentTime;
+        }
+
+        function eraseCircle(x, y, r) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.clearRect(x - r, y - r, r * 2, r * 2);
+
+            if (backgroundLoadedImage) {
+                const hRatio = viewW / backgroundLoadedImage.width;
+                const vRatio = viewH / backgroundLoadedImage.height;
+                const ratio = Math.min(hRatio, vRatio);
+                const csx = (viewW - backgroundLoadedImage.width * ratio) / 2;
+                const csy = (viewH - backgroundLoadedImage.height * ratio) / 2;
+                const sx = (x - r - csx) / ratio;
+                const sy = (y - r - csy) / ratio;
+                const sw = (r * 2) / ratio;
+                const sh = (r * 2) / ratio;
+                ctx.drawImage(backgroundLoadedImage, sx, sy, sw, sh, x - r, y - r, r * 2, r * 2);
+            }
+            ctx.restore();
+        }
+
+        function createDrip(x, y, color, baseSize) {
+            const dripLength = Math.random() * 45 + 12;
+            const dripWidth = Math.max(1, baseSize * 0.3);
+            let currentDripY = y;
+            const targetY = y + dripLength;
+            function animateDrip() {
+                if (currentDripY < targetY && currentDripY < viewH) {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x - dripWidth / 2, currentDripY, dripWidth, 2);
+                    currentDripY += Math.random() * 0.9 + 0.3;
+                    requestAnimationFrame(animateDrip);
+                }
+            }
+            animateDrip();
+        }
+
+        function clearWall() {
+            ctx.clearRect(0, 0, viewW, viewH);
+            if (backgroundLoadedImage) {
+                const hRatio = viewW / backgroundLoadedImage.width;
+                const vRatio = viewH / backgroundLoadedImage.height;
+                const ratio = Math.min(hRatio, vRatio);
+                const centerShiftX = (viewW - backgroundLoadedImage.width * ratio) / 2;
+                const centerShiftY = (viewH - backgroundLoadedImage.height * ratio) / 2;
+                ctx.drawImage(
+                    backgroundLoadedImage,
+                    0, 0, backgroundLoadedImage.width, backgroundLoadedImage.height,
+                    centerShiftX, centerShiftY, backgroundLoadedImage.width * ratio, backgroundLoadedImage.height * ratio
+                );
+            }
+        }
+
+        function loadBackground(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    backgroundLoadedImage = img;
+                    markActiveBackground(null);
+                    redrawCanvas();
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function markActiveBackground(el) {
+            document.querySelectorAll('.bg-slide').forEach(b => b.classList.remove('active'));
+            if (el) el.classList.add('active');
+        }
+
+        /* first option: transparent background (sticker mode) */
+        function selectTransparentBackground(el) {
+            backgroundLoadedImage = null;
+            ctx.clearRect(0, 0, viewW, viewH);
+            const target = el || (bgTrack ? bgTrack.querySelector('.bg-slide[data-index="0"]') : null);
+            markActiveBackground(target);
+            closeModals();
+        }
+
+        function selectPresetBackground(imageSrc, el) {
+            const img = new Image();
+            img.onload = function() {
+                backgroundLoadedImage = img;
+                markActiveBackground(el);
+                redrawCanvas();
+                closeModals();
+            };
+            img.onerror = function() {
+                alert('Can not load background sorry :(.');
+                closeModals();
+            };
+            img.src = imageSrc;
+        }
+
+        function redrawCanvas() {
+            ctx.clearRect(0, 0, viewW, viewH);
+            if (backgroundLoadedImage) {
+                const hRatio = viewW / backgroundLoadedImage.width;
+                const vRatio = viewH / backgroundLoadedImage.height;
+                const ratio = Math.min(hRatio, vRatio);
+                const centerShiftX = (viewW - backgroundLoadedImage.width * ratio) / 2;
+                const centerShiftY = (viewH - backgroundLoadedImage.height * ratio) / 2;
+
+                ctx.drawImage(
+                    backgroundLoadedImage,
+                    0, 0, backgroundLoadedImage.width, backgroundLoadedImage.height,
+                    centerShiftX, centerShiftY, backgroundLoadedImage.width * ratio, backgroundLoadedImage.height * ratio
+                );
+            }
+        }
+
+        function saveAndShareWallResult() {
+            closeAllMenus();
+
+            const dataUrl = canvas.toDataURL('image/png');
+            const filename = 'handstyler_' + Date.now() + '.png';
+
+            if (window.AndroidNative && window.AndroidNative.saveToGallery) {
+                window.AndroidNative.saveToGallery(dataUrl, filename);
+                showToast();
+
+                if (window.AndroidNative.shareImage) {
+                    setTimeout(() => {
+                        window.AndroidNative.shareImage(dataUrl, filename);
+                    }, 400);
+                }
+                return;
+            }
+
+            canvas.toBlob(async (blob) => {
+                if (!blob) return;
+
+                const file = new File([blob], filename, { type: 'image/png' });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: 'HANDSTYLER Tag',
+                            text: 'Made with HANDSTYLER!'
+                        });
+                        showToast();
+                        return;
+                    } catch (err) {
+                        if (err.name !== 'AbortError') console.log('Share fallback:', err);
+                    }
+                }
+
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                showToast();
+            }, 'image/png');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastSavedAlert');
+            if (!toast) return;
+            toast.textContent = msg || '> SAVED!';
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
+        }
+
+        function updateModalSize(val) {
+            document.getElementById('inkSize').value = val;
+            document.getElementById('modalSizeVal').innerText = val;
+        }
+
+        function updateModalSpeed(val) {
+            strokeSpeed = Number(val);
+            document.getElementById('modalSpeedVal').innerText = val;
+        }
+
+        function updateModalDrip(val) {
+            document.getElementById('dripFreq').value = val;
+            document.getElementById('modalDripVal').innerText = val;
+        }
+
+        function updateModalPress(val) {
+            document.getElementById('pressionSens').value = val;
+            document.getElementById('modalPressVal').innerText = val;
+        }
+
+        document.getElementById('modalInkSize').addEventListener('input', function() {
+            updateModalSize(this.value);
+        });
+        document.getElementById('modalSpeed').addEventListener('input', function() {
+            updateModalSpeed(this.value);
+        });
+        document.getElementById('modalDripFreq').addEventListener('input', function() {
+            updateModalDrip(this.value);
+        });
+        document.getElementById('modalPressionSens').addEventListener('input', function() {
+            updateModalPress(this.value);
+        });
+
+        /* ==================== TUTORIAL ==================== */
+        const TUTORIAL_KEY = 'handstyler_tutorial_v3';
+
+        const TUTORIAL_STEPS = [
+            {
+                target: '#cleanPixelTerminal',
+                text: 'This little terminal is the tool selector. Swipe it left or right (Or tap the icon) to change tool.'
+            },
+            {
+                target: '#toolsSlot',
+                text: 'There is 5 tools to use: Round Nib, Square Nib, Dirty Spray, Steel Ball and Mixed Solid Marker.'
+            },
+            {
+                target: '#inkSize',
+                text: 'Size sets how wide the nib is. It works with every tool.'
+            },
+            {
+                target: '#colorBtn',
+                text: 'Colour box opens the picker. Drag in the field and on the bar.'
+            },
+            {
+                target: '#setupBtn',
+                text: '"SETUP" controls stroke speed, drips and pressure. Drips sets how many drips fall while you tag. Pressure sets how much the line thickens when you write fast. Stroke speed sets how far the ink trails behind your finger.'
+            },
+            {
+                target: '#clearBtn',
+                text: '"CLEAR" wipes the whole tag in one tap.'
+            },
+            {
+                target: '#menuBtn',
+                text: 'Menù has Background, Upload, Save, Share, Info and Quit.'
+            },
+            {
+                target: '#wallCanvas',
+                text: 'Hope you enjoy! Leave feedback to help improve the project, or support from the info section.'
+            }
+        ];
+
+        let tutorialIndex = 0;
+        let tutorialActive = false;
+
+        function renderTutorialStep() {
+            const step = TUTORIAL_STEPS[tutorialIndex];
+            if (!step) return endTutorial();
+
+            const el = document.querySelector(step.target);
+            const spot = document.getElementById('tutorialSpot');
+            const card = document.getElementById('tutorialCard');
+
+            document.getElementById('tutorialStep').textContent = (tutorialIndex + 1) + ' / ' + TUTORIAL_STEPS.length;
+            document.getElementById('tutorialText').innerHTML = step.text;
+            document.getElementById('tutorialNext').textContent =
+                (tutorialIndex === TUTORIAL_STEPS.length - 1) ? 'DONE' : 'NEXT';
+
+            if (!el) {
+                spot.style.width = '0px';
+                spot.style.height = '0px';
+                card.style.left = '12px';
+                card.style.top = '60px';
+                return;
+            }
+
+            const r = el.getBoundingClientRect();
+            spot.style.left = (r.left - 5) + 'px';
+            spot.style.top = (r.top - 5) + 'px';
+            spot.style.width = (r.width + 10) + 'px';
+            spot.style.height = (r.height + 10) + 'px';
+
+            /* measure card after the text is set, then place it without covering the target */
+            card.style.left = '0px';
+            card.style.top = '0px';
+            const cw = card.offsetWidth;
+            const ch = card.offsetHeight;
+
+            let top = r.bottom + 14;
+            if (top + ch > window.innerHeight - 8) top = r.top - ch - 14;
+            if (top < 8) top = 8;
+
+            let left = r.left + (r.width / 2) - (cw / 2);
+            left = Math.max(8, Math.min(left, window.innerWidth - cw - 8));
+
+            card.style.left = left + 'px';
+            card.style.top = top + 'px';
+        }
+
+        function startTutorial() {
+            closeAllMenus();
+            closeModals();
+            tutorialIndex = 0;
+            tutorialActive = true;
+            document.getElementById('tutorialOverlay').classList.add('active');
+            renderTutorialStep();
+        }
+
+        function nextTutorialStep() {
+            tutorialIndex++;
+            if (tutorialIndex >= TUTORIAL_STEPS.length) return endTutorial();
+            renderTutorialStep();
+        }
+
+        function endTutorial() {
+            tutorialActive = false;
+            document.getElementById('tutorialOverlay').classList.remove('active');
+            try { localStorage.setItem(TUTORIAL_KEY, '1'); } catch (e) {}
+        }
+
+        document.getElementById('tutorialNext').addEventListener('click', nextTutorialStep);
+        document.getElementById('tutorialSkip').addEventListener('click', endTutorial);
+
+        window.addEventListener('resize', function () {
+            if (tutorialActive) renderTutorialStep();
+        });
+
+        /* shows on first run, or always when the page is opened with ?tutorial */
+        let tutorialShown = false;
+
+        function maybeShowTutorial() {
+            let force = false;
+            let seen = false;
+            try { force = /[?&]tutorial/.test(window.location.search); } catch (e) {}
+            try { seen = localStorage.getItem(TUTORIAL_KEY) === '1'; } catch (e) {}
+            if (!force && seen) return;
+            setTimeout(function () {
+                if (tutorialShown || tutorialActive) return;
+                if (document.querySelector('.terminal-fullscreen-modal.active, .terminal-upload-modal.active, .controls-modal.active, .color-modal.active')) return;
+                tutorialShown = true;
+                startTutorial();
+            }, 700);
+        }
+
+        /* ==================== BACKGROUND CAROUSEL ==================== */
+        /* Swipe handled in JS (transform) so it works on every device.
+           Arrows + tap + USE button as fallbacks.
+           Slide images are lazy-loaded: only +-2 around the current one. */
+
+        const BG_ITEMS = [
+            { label: '> TRANSPARENT _', src: null },
+            { label: '> WALL _', src: 'images/bg/bg1.png' },
+            { label: '> TRUCK _', src: 'images/bg/bg2.png' },
+            { label: '> CABIN _', src: 'images/bg/bg3.png' },
+            { label: '> WOOD _', src: 'images/bg/bg4.png' },
+            { label: '> DIRTY-STEEL _', src: 'images/bg/bg5.png' },
+            { label: '> TOXIC _', src: 'images/bg/bg6.png' },
+            { label: '> PRIORITY _', src: 'images/bg/bg7.png' },
+            { label: '> RUST _', src: 'images/bg/bg8.png' },
+            { label: '> STEEL-1 _', src: 'images/bg/bg9.png' },
+            { label: '> STEEL-2 _', src: 'images/bg/bg10.png' },
+            { label: '> STEEL-3 _', src: 'images/bg/bg11.png' },
+            { label: '> STEEL-4 _', src: 'images/bg/bg12.png' },
+            { label: '> DIRTY _', src: 'images/bg/bg13.png' },
+            { label: '> VERY-DIRTY _', src: 'images/bg/bg14.png' },
+            { label: '> FROST-GLASS _', src: 'images/bg/bg15.png' },
+            { label: '> WET-GLASS _', src: 'images/bg/bg16.png' },
+            { label: '> RAINY-GLASS _', src: 'images/bg/bg17.png' },
+            { label: '> LEPOSTE _', src: 'images/bg/bg18.png' },
+            { label: '> PAPER _', src: 'images/bg/bg19.png' },
+            { label: '> DANGER _', src: 'images/bg/bg20.png' },
+            { label: '> NO-SMOKING _', src: 'images/bg/bg21.png' },
+            { label: '> NO-ENTRY _', src: 'images/bg/bg22.png' },
+            { label: '> ROLL _', src: 'images/bg/bg23.png' },
+            { label: '> NO-TRESPASSING _', src: 'images/bg/bg24.png' },
+            { label: '> MACHINE _', src: 'images/bg/bg25.png' },
+            { label: '> PLANE _', src: 'images/bg/bg26.png' },
+            { label: '> SPACE _', src: 'images/bg/bg27.png' },
+            { label: '> CALL-ME<3 _', src: 'images/bg/bg28.png' },
+            { label: '> TERMINAL _', src: 'images/bg/bg29.png' },
+            { label: '> HANDSTYLER _', src: 'images/bg/bg30.png' }
+        ];
+
+        const bgViewport = document.getElementById('bgCarouselViewport');
+        const bgTrack = document.getElementById('bgCarouselTrack');
+        const bgCounterEl = document.getElementById('bgCounter');
+        const bgLabelEl = document.getElementById('bgCarouselLabel');
+
+        let bgIndex = 0;
+        let bgSuppressClick = false;
+
+        function bgWrapIndex(i) {
+            const n = BG_ITEMS.length;
+            return ((i % n) + n) % n;
+        }
+
+        function bgViewportWidth() {
+            return bgViewport ? (bgViewport.clientWidth || 1) : 1;
+        }
+
+        function bgUpdateMeta() {
+            if (bgCounterEl) bgCounterEl.textContent = (bgIndex + 1) + ' / ' + BG_ITEMS.length;
+            if (bgLabelEl && BG_ITEMS[bgIndex]) bgLabelEl.textContent = BG_ITEMS[bgIndex].label;
+        }
+
+        /* Lazy-load slide images within +-2 of the current index */
+        function bgLoadAround(center) {
+            if (!bgTrack) return;
+            const RANGE = 2;
+            for (let offset = -RANGE; offset <= RANGE; offset++) {
+                const idx = bgWrapIndex(center + offset);
+                const slide = bgTrack.children[idx];
+                if (!slide) continue;
+                const img = slide.querySelector('img[data-src]');
+                if (img) {
+                    img.src = img.getAttribute('data-src');
+                    img.removeAttribute('data-src');
+                }
+            }
+        }
+
+        function bgRender(animate) {
+            if (!bgTrack) return;
+            bgTrack.style.transition = animate
+                ? 'transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1)'
+                : 'none';
+            bgTrack.style.transform = 'translate3d(' + (-bgIndex * bgViewportWidth()) + 'px, 0, 0)';
+            bgUpdateMeta();
+        }
+
+        function bgGoTo(i, animate) {
+            bgIndex = bgWrapIndex(i);
+            bgLoadAround(bgIndex);
+            bgRender(animate !== false);
+        }
+
+        function bgBuildCarousel() {
+            if (!bgTrack) return;
+            bgTrack.innerHTML = '';
+            BG_ITEMS.forEach(function (item, i) {
+                const slide = document.createElement('div');
+                slide.className = 'bg-slide';
+                slide.setAttribute('data-index', i);
+                if (i === 0) slide.classList.add('active');
+
+                if (item.src) {
+                    const img = document.createElement('img');
+                    img.setAttribute('data-src', item.src);
+                    img.alt = '';
+                    img.draggable = false;
+                    slide.appendChild(img);
+                } else {
+                    const checker = document.createElement('div');
+                    checker.className = 'bg-slide-transparent';
+                    slide.appendChild(checker);
+                }
+
+                const lbl = document.createElement('span');
+                lbl.className = 'bg-slide-label';
+                lbl.textContent = item.label;
+                slide.appendChild(lbl);
+
+                bgTrack.appendChild(slide);
+            });
+            bgLoadAround(0);
+            bgRender(false);
+        }
+
+        function bgApplyIndex(i) {
+            const item = BG_ITEMS[i];
+            if (!item) return;
+            const slide = bgTrack ? bgTrack.children[i] : null;
+            if (item.src) {
+                selectPresetBackground(item.src, slide);
+            } else {
+                selectTransparentBackground(slide);
+            }
+        }
+
+        function bgUseCurrent() { bgApplyIndex(bgIndex); }
+        function bgNext() { bgGoTo(bgIndex + 1, true); }
+        function bgPrev() { bgGoTo(bgIndex - 1, true); }
+
+        function bgSyncToActive() {
+            if (!bgTrack) return;
+            const active = bgTrack.querySelector('.bg-slide.active');
+            if (active) {
+                const i = parseInt(active.getAttribute('data-index'), 10);
+                if (!isNaN(i)) bgIndex = i;
+            }
+            bgLoadAround(bgIndex);
+            bgRender(false);
+        }
+
+        /* ---- swipe / drag ---- */
+        let bgDragging = false;
+        let bgStartX = 0, bgStartY = 0;
+        let bgDeltaX = 0, bgDeltaY = 0;
+        let bgAxis = null;
+        let bgBaseTranslate = 0;
+        let bgStartTime = 0;
+        let bgMoved = false;
+
+        function bgDragStart(x, y) {
+            bgDragging = true;
+            bgStartX = x;
+            bgStartY = y;
+            bgDeltaX = 0;
+            bgDeltaY = 0;
+            bgAxis = null;
+            bgMoved = false;
+            bgStartTime = Date.now();
+            bgBaseTranslate = -bgIndex * bgViewportWidth();
+            if (bgTrack) bgTrack.style.transition = 'none';
+            if (bgViewport) bgViewport.classList.add('dragging');
+        }
+
+        function bgDragMove(x, y, ev) {
+            if (!bgDragging) return;
+            bgDeltaX = x - bgStartX;
+            bgDeltaY = y - bgStartY;
+
+            if (bgAxis === null) {
+                if (Math.abs(bgDeltaX) > 7 || Math.abs(bgDeltaY) > 7) {
+                    bgAxis = (Math.abs(bgDeltaX) > Math.abs(bgDeltaY)) ? 'x' : 'y';
+                }
+            }
+
+            if (bgAxis === 'x') {
+                if (ev && ev.cancelable) ev.preventDefault();
+                if (Math.abs(bgDeltaX) > 8) bgMoved = true;
+                if (bgTrack) {
+                    bgTrack.style.transform = 'translate3d(' + (bgBaseTranslate + bgDeltaX) + 'px, 0, 0)';
+                }
+            }
+        }
+
+        function bgDragEnd() {
+            if (!bgDragging) return;
+            bgDragging = false;
+            if (bgViewport) bgViewport.classList.remove('dragging');
+
+            const w = bgViewportWidth();
+            const threshold = Math.max(38, w * 0.14);
+            const elapsed = Math.max(1, Date.now() - bgStartTime);
+            const velocity = Math.abs(bgDeltaX) / elapsed;
+
+            const swipeEnough = Math.abs(bgDeltaX) > threshold ||
+                                (velocity > 0.45 && Math.abs(bgDeltaX) > 18);
+
+            if (bgAxis === 'x' && swipeEnough) {
+                bgGoTo(bgDeltaX < 0 ? bgIndex + 1 : bgIndex - 1, true);
+                bgSuppressClick = true;
+            } else if (bgAxis === 'x' && bgMoved) {
+                bgRender(true);
+                bgSuppressClick = true;
+            } else {
+                bgRender(true);
+            }
+
+            if (bgSuppressClick) {
+                setTimeout(function () { bgSuppressClick = false; }, 400);
+            }
+
+            bgAxis = null;
+            bgMoved = false;
+        }
+
+        if (bgViewport) {
+            bgViewport.addEventListener('touchstart', function (e) {
+                if (e.touches.length !== 1) return;
+                bgDragStart(e.touches[0].clientX, e.touches[0].clientY);
+            }, { passive: true });
+
+            bgViewport.addEventListener('touchmove', function (e) {
+                if (!bgDragging || e.touches.length !== 1) return;
+                bgDragMove(e.touches[0].clientX, e.touches[0].clientY, e);
+            }, { passive: false });
+
+            bgViewport.addEventListener('touchend', function () { bgDragEnd(); }, { passive: true });
+            bgViewport.addEventListener('touchcancel', function () { bgDragEnd(); }, { passive: true });
+
+            bgViewport.addEventListener('mousedown', function (e) {
+                if (e.button !== 0) return;
+                bgDragStart(e.clientX, e.clientY);
+            });
+
+            bgViewport.addEventListener('click', function (e) {
+                if (bgSuppressClick) { bgSuppressClick = false; return; }
+
+                let node = e.target;
+                while (node && node !== bgViewport &&
+                       !(node.classList && node.classList.contains('bg-slide'))) {
+                    node = node.parentNode;
+                }
+                if (!node || node === bgViewport) return;
+
+                const idx = parseInt(node.getAttribute('data-index'), 10);
+                if (isNaN(idx)) return;
+
+                if (idx !== bgIndex) { bgGoTo(idx, true); return; }
+                bgApplyIndex(idx);
+            });
+        }
+
+        window.addEventListener('mousemove', function (e) {
+            if (!bgDragging) return;
+            bgDragMove(e.clientX, e.clientY, e);
+        });
+
+        window.addEventListener('mouseup', function () {
+            if (!bgDragging) return;
+            bgDragEnd();
+        });
+
+        document.addEventListener('keydown', function (e) {
+            const modal = document.getElementById('backgroundModal');
+            if (!modal || !modal.classList.contains('active')) return;
+            if (e.key === 'ArrowRight') bgNext();
+            else if (e.key === 'ArrowLeft') bgPrev();
+        });
+
+        /* Single resize handler for the whole app */
+        window.addEventListener('resize', function () {
+            resizeVramCanvas();
+            resizeCanvas();
+            if (bgTrack) bgRender(false);
+        });
+
+        bgBuildCarousel();
+        paintField();
+        placeCursor();
+        refreshActiveColor();
+        maybeShowTutorial();
+    </script>
+</body>
+</html>
