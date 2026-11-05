@@ -1,5 +1,11 @@
 repository: https://github.com/NKNW-Lab/Handstyler
 pubkey: npub1c73eshvej5s4284zud029vz0yh672hvtvlv94pard796hneqxwgqku26yr
+icon: ./store/icon.png
+images:
+  - ./store/01.jpg
+  - ./store/02.jpg
+  - ./store/03.jpg
+  - ./store/04.jpg
 name: Handstyler
 summary: Graffiti handstyle tag machine, offline, no ads, no accounts
 description: |
