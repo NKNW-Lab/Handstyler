@@ -9,9 +9,9 @@ Not a programmer, a team or a company, so feedback is very appreciated.
 
 -File: Handstyler-1.0.apk
 
--Sha256: 256c7517f2a7d1c8751928ff40f5a8e3a797a7b0074912f2ef05b1b5e818792d
+-Sha256: d21cb634a980c63c0f2527c0c9bf2a2a36c234f3a98179aca744cd897ed48e08 
 
--Virustotal: https://www.virustotal.com/gui/file/256c7517f2a7d1c8751928ff40f5a8e3a797a7b0074912f2ef05b1b5e818792d
+-Virustotal: [https://www.virustotal.com/gui/file/256c7517f2a7d1c8751928ff40f5a8e3a797a7b0074912f2ef05b1b5e818792d](https://www.virustotal.com/gui/file/d21cb634a980c63c0f2527c0c9bf2a2a36c234f3a98179aca744cd897ed48e08?nocache=1)
 
 Download: https://github.com/NKNW-Lab/Handstyler/releases/download/1.0/Handstyler-1.0.apk
 -Page: https://nknwlab.com/
