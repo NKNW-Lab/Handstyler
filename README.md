@@ -10,11 +10,11 @@ Not a programmer, a team or a company, so feedback is very appreciated.
 -File: Handstyler-2.0.apk
 
 -Sha256: 
-38aab9a901cc352b5f9cfdb7696d08b11b5348b87eec1c51c90294e0af9fa202  app-release.apk
+38aab9a901cc352b5f9cfdb7696d08b11b5348b87eec1c51c90294e0af9fa202  
 
 -Virustotal: https://www.virustotal.com/gui/file/38aab9a901cc352b5f9cfdb7696d08b11b5348b87eec1c51c90294e0af9fa202
 
-Download: [https://github.com/NKNW-Lab/Handstyler/releases/download/1.0/Handstyler-1.0.apk](https://github.com/NKNW-Lab/Handstyler/releases/tag/2.0)
+Download: https://github.com/NKNW-Lab/Handstyler/releases/download/2.0/Handstyler-2.0.apk
 -Page: https://nknwlab.com/
 
 The sha256 is the fingerprint of that exact file. Verify it with
