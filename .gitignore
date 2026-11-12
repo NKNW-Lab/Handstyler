@@ -6,3 +6,6 @@ android/capacitor-cordova-android-plugins/build/
 *.jks
 *.apk
 *.aab
+.env
+*.p12
+*.jks

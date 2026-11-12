@@ -1230,6 +1230,11 @@
     .tutorial-card {
         position: absolute;
         width: min(320px, calc(100vw - 24px));
+        max-height: calc(100vh - 16px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
+        -webkit-overflow-scrolling: touch;
         background: #0c1812;
         border: 1px solid #00c6e6;
         border-radius: 10px;
@@ -1436,6 +1441,22 @@
         .picker-field {
             height: 110px;
         }
+
+        /* compact tutorial card on short screens */
+        .tutorial-card {
+            width: min(280px, calc(100vw - 16px));
+            padding: 10px 12px;
+        }
+        .tutorial-card p {
+            font-size: 0.76em;
+            line-height: 1.45;
+            margin-bottom: 9px;
+        }
+        .tutorial-skip,
+        .tutorial-next {
+            padding: 6px 11px;
+            font-size: 0.68em;
+        }
     }
 </style>
 </head>
@@ -1569,6 +1590,11 @@
                 <input type="range" id="modalPressionSens" class="industrial-slider"
                        min="0" max="100" value="30">
             </div>
+            <div class="control-row">
+                <label>SURFACE BRIGHT: <span id="modalSurfaceVal">3</span></label>
+                <input type="range" id="modalSurface" class="industrial-slider"
+                       min="0" max="100" value="3">
+            </div>
         </div>
     </div>
 
@@ -1631,9 +1657,9 @@
         <div class="terminal-modal-body">
             <div class="info-content-wrapper">
                 <p class="info-text-small">
-                    A pocket tag machine for graffiti writers, built after the original "Tags" app and the KATSU app.
+                    A pocket tag machine for graffiti writers.
                     <br><br>
-                    Both are old and quiet now. The canvas saves as a PNG with a transparent background, and you can choose from 30 backgrounds and a full colour range.
+                    The canvas saves as a PNG with a transparent background, and you can choose from 10 backgrounds.
                     <br><br>
                     No ads, no subscription, no account, nothing to sign up for.
                     Your drawing stays on this device, and nothing loads over the network while you draw.
@@ -1645,7 +1671,8 @@
                     <a href="https://github.com/NKNW-Lab/Handstyler" target="_blank" rel="noopener" class="info-external-link" onclick="openExternalLink(this.href); return false;">&gt; Source Code _</a>
                 </div>
 
-                <div class="info-icons-grid cols-4">
+
+                <div class="info-icons-grid cols-3">
                     <div class="info-icon-container">
                         <a href="https://buymeacoffee.com/nknw_lab" target="_blank" rel="noopener" class="info-icon-link" onclick="openExternalLink(this.href); return false;">
                             <div class="info-icon-square" title="Buy me a coffee!">
@@ -1665,55 +1692,19 @@
                     </div>
 
                     <div class="info-icon-container">
-                        <a href="https://www.gamedevfreelance.com/users/nknw_lab" target="_blank" rel="noopener" class="info-icon-link" onclick="openExternalLink(this.href); return false;">
-                            <div class="info-icon-square" title="Gdm">
-                                <img src="images/ico/gdm.png" alt="Gdm" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ff6b35;font-size:18px;font-weight:bold;\'>GDM</span>'">
-                            </div>
-                            <span class="info-icon-label">Gdm</span>
-                        </a>
-                    </div>
-
-                    <div class="info-icon-container">
                         <a href="https://nknw.itch.io/" target="_blank" rel="noopener" class="info-icon-link" onclick="openExternalLink(this.href); return false;">
                             <div class="info-icon-square" title="Itch.io">
                                 <img src="images/ico/itch.png" alt="Itch.io" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ff6b35;font-size:18px;font-weight:bold;\'>ITCH</span>'">
                             </div>
                             <span class="info-icon-label">Itch.io</span>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="info-icons-grid cols-3">
-                    <div class="info-icon-container">
-                        <a href="https://www.fab.com/sellers/NKNW_Lab" target="_blank" rel="noopener" class="info-icon-link" onclick="openExternalLink(this.href); return false;">
-                            <div class="info-icon-square" title="fab">
-                                <img src="images/ico/fab.png" alt="Fab" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ff6b35;font-size:18px;font-weight:bold;\'>FAB</span>'">
-                            </div>
-                            <span class="info-icon-label">Fab</span>
-                        </a>
-                    </div>
-
-                    <div class="info-icon-container">
-                        <a href="https://njump.to/nprofile1qqsv0guctkve2g24r63wxh4zkp8jta09tk9k0kz6s73klzateusr8yqpr4mhxue69uhkummnw3ezucnfw33k76twv4ezuum0vd5kzmp0qyg8wumn8ghj7mn0wd68ytnddakj7qg4waehxw309ahx7um5wghx77r5wghxgetk9udgjnuh" target="_blank" rel="noopener" class="info-icon-link" onclick="openExternalLink(this.href); return false;">
-                            <div class="info-icon-square" title="Amethyst">
-                                <img src="images/ico/amet.png" alt="Amethyst" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ff6b35;font-size:18px;font-weight:bold;\'>AMT</span>'">
-                            </div>
-                            <span class="info-icon-label">Amethyst</span>
-                        </a>
-                    </div>
-
-                    <div class="info-icon-container">
-                        <a href="https://www.instagram.com/nknw_lab" target="_blank" rel="noopener" class="info-icon-link" onclick="openExternalLink(this.href); return false;">
-                            <div class="info-icon-square" title="Instagram">
-                                <img src="images/ico/insta.png" alt="Instagram" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'color:#ff6b35;font-size:18px;font-weight:bold;\'>IG</span>'">
-                            </div>
-                            <span class="info-icon-label">Instagram</span>
-                        </a>
                     </div>
                 </div>
 
                 <div>
-                    <a href="https://nknwlab.com/" target="_blank" rel="noopener" class="info-site-link" onclick="openExternalLink(this.href); return false;">&gt; NKNWLAB.COM &lt;</a>
+<a href="https://nknwlab.com/" target="_blank" rel="noopener" onclick="return openExternalLink(this.href);" style="display: flex; justify-content: center; width: 100%; padding: 8px 14px; text-decoration: none;">
+    <img src="images/ico/site.png" alt="NKNWLAB.COM" style="height: 46px; width: auto; max-width: 100%; object-fit: contain; display: block; filter: drop-shadow(0 0 8px rgba(255, 23, 68, 0.8)) drop-shadow(0 0 16px rgba(255, 23, 68, 0.4));">
+</a>
+
                 </div>
             </div>
         </div>
@@ -1723,7 +1714,7 @@
     <div id="tutorialOverlay" class="tutorial-overlay">
         <div id="tutorialSpot" class="tutorial-spot"></div>
         <div id="tutorialCard" class="tutorial-card">
-            <div class="tutorial-step" id="tutorialStep">1 / 8</div>
+            <div class="tutorial-step" id="tutorialStep">1 / 9</div>
             <p id="tutorialText"></p>
             <div class="tutorial-actions">
                 <button type="button" class="tutorial-skip" id="tutorialSkip">SKIP</button>
@@ -2456,6 +2447,12 @@
                     ctx.fillRect(x - dripWidth / 2, currentDripY, dripWidth, 2);
                     currentDripY += Math.random() * 0.9 + 0.3;
                     requestAnimationFrame(animateDrip);
+                } else {
+                    /* punta tonda invece del taglio quadrato */
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.arc(x, currentDripY - 2, dripWidth / 2, 0, Math.PI);
+                    ctx.fill();
                 }
             }
             animateDrip();
@@ -2614,6 +2611,21 @@
             document.getElementById('modalPressVal').innerText = val;
         }
 
+        /* changes only the visible surface behind the canvas, the PNG stays transparent */
+        const surfaceContainer = document.querySelector('.industrial-canvas-container');
+
+        function applySurface(val) {
+            const grey = Math.min(240, Math.round(Number(val) * 2.4));
+            if (surfaceContainer) {
+                surfaceContainer.style.background = 'rgb(' + grey + ', ' + grey + ', ' + grey + ')';
+            }
+        }
+
+        function updateModalSurface(val) {
+            document.getElementById('modalSurfaceVal').innerText = val;
+            applySurface(val);
+        }
+
         document.getElementById('modalInkSize').addEventListener('input', function() {
             updateModalSize(this.value);
         });
@@ -2626,9 +2638,12 @@
         document.getElementById('modalPressionSens').addEventListener('input', function() {
             updateModalPress(this.value);
         });
+        document.getElementById('modalSurface').addEventListener('input', function() {
+            updateModalSurface(this.value);
+        });
 
         /* ==================== TUTORIAL ==================== */
-        const TUTORIAL_KEY = 'handstyler_tutorial_v3';
+        const TUTORIAL_KEY = 'handstyler_tutorial_v4';
 
         const TUTORIAL_STEPS = [
             {
@@ -2641,7 +2656,7 @@
             },
             {
                 target: '#inkSize',
-                text: 'Size sets how wide the nib is. It works with every tool.'
+                text: 'Size sets how wide the nib is.'
             },
             {
                 target: '#colorBtn',
@@ -2649,7 +2664,11 @@
             },
             {
                 target: '#setupBtn',
-                text: '"SETUP" controls stroke speed, drips and pressure. Drips sets how many drips fall while you tag. Pressure sets how much the line thickens when you write fast. Stroke speed sets how far the ink trails behind your finger.'
+                text: '"SETUP" controls stroke speed, drips pressure and the brightness of the transparent background. Drips sets how many drips fall while you tag. Pressure sets how much the line thickens when you write fast. Stroke speed sets how far the ink trails behind your finger.'
+            },
+            {
+                target: '#setupBtn',
+                text: 'Inside SETUP there is also SURFACE BRIGHT. It lights up the wall behind the canvas from black to almost white, so you can tag on a light surface. The saved PNG stays transparent.'
             },
             {
                 target: '#clearBtn',
@@ -2764,36 +2783,16 @@
 
         const BG_ITEMS = [
             { label: '> TRANSPARENT _', src: null },
-            { label: '> WALL _', src: 'images/bg/bg1.png' },
-            { label: '> TRUCK _', src: 'images/bg/bg2.png' },
-            { label: '> CABIN _', src: 'images/bg/bg3.png' },
-            { label: '> WOOD _', src: 'images/bg/bg4.png' },
-            { label: '> DIRTY-STEEL _', src: 'images/bg/bg5.png' },
-            { label: '> TOXIC _', src: 'images/bg/bg6.png' },
-            { label: '> PRIORITY _', src: 'images/bg/bg7.png' },
-            { label: '> RUST _', src: 'images/bg/bg8.png' },
-            { label: '> STEEL-1 _', src: 'images/bg/bg9.png' },
-            { label: '> STEEL-2 _', src: 'images/bg/bg10.png' },
-            { label: '> STEEL-3 _', src: 'images/bg/bg11.png' },
-            { label: '> STEEL-4 _', src: 'images/bg/bg12.png' },
-            { label: '> DIRTY _', src: 'images/bg/bg13.png' },
-            { label: '> VERY-DIRTY _', src: 'images/bg/bg14.png' },
-            { label: '> FROST-GLASS _', src: 'images/bg/bg15.png' },
-            { label: '> WET-GLASS _', src: 'images/bg/bg16.png' },
-            { label: '> RAINY-GLASS _', src: 'images/bg/bg17.png' },
-            { label: '> LEPOSTE _', src: 'images/bg/bg18.png' },
-            { label: '> PAPER _', src: 'images/bg/bg19.png' },
-            { label: '> DANGER _', src: 'images/bg/bg20.png' },
-            { label: '> NO-SMOKING _', src: 'images/bg/bg21.png' },
-            { label: '> NO-ENTRY _', src: 'images/bg/bg22.png' },
-            { label: '> ROLL _', src: 'images/bg/bg23.png' },
-            { label: '> NO-TRESPASSING _', src: 'images/bg/bg24.png' },
-            { label: '> MACHINE _', src: 'images/bg/bg25.png' },
-            { label: '> PLANE _', src: 'images/bg/bg26.png' },
-            { label: '> SPACE _', src: 'images/bg/bg27.png' },
-            { label: '> CALL-ME<3 _', src: 'images/bg/bg28.png' },
-            { label: '> TERMINAL _', src: 'images/bg/bg29.png' },
-            { label: '> HANDSTYLER _', src: 'images/bg/bg30.png' }
+            { label: '> DIRT _', src: 'images/bg/bg1.png' },
+            { label: '> RUST _', src: 'images/bg/bg2.png' },
+            { label: '> WOOD _', src: 'images/bg/bg3.png' },
+            { label: '> STEEL _', src: 'images/bg/bg4.png' },
+            { label: '> WALL _', src: 'images/bg/bg5.png' },
+            { label: '> GLASS _', src: 'images/bg/bg6.png' },
+            { label: '> ROLL _', src: 'images/bg/bg7.png' },
+            { label: '> SLAP #1 _', src: 'images/bg/bg8.png' },
+            { label: '> SLAP #2_', src: 'images/bg/bg9.png' },
+            { label: '> SLAP #3 _', src: 'images/bg/bg10.png' }
         ];
 
         const bgViewport = document.getElementById('bgCarouselViewport');

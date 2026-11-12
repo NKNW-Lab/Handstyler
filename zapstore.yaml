@@ -11,8 +11,8 @@ summary: Graffiti handstyle tag machine, offline, no ads, no accounts
 description: |
   This canvas is inspired by the old "Tags" application and the KATSU app.
 
-  There are 5 markers with different tips, the default mode saves a transparent PNG image that you can use as a sticker. Includes 31 backgrounds, 5 drawing tools, and drips.
+  There are 5 markers with different tips, the default mode saves a transparent PNG image that you can use as a sticker. Includes 10 backgrounds, 5 drawing tools, and drips.
 
   ...You can also upload your own pictures!
-tags: [art, drawing, graffiti,tag,vandal,paint,draw]
+tags: [art, drawing, graffiti, tag, vandal, paint, draw]
 metadata_sources: [github]
